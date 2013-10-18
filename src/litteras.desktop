@@ -1,0 +1,17 @@
+[Desktop Entry]
+Categories=Qt;KDE;Office;Mail;
+Exec=litteras
+Icon=mail-flag
+StartupNotify=true
+Terminal=false
+TerminalOptions=
+Type=Application
+X-DBUS-ServiceName=org.kde.litteras
+X-DBUS-StartupType=unique
+X-KDE-SubstituteUID=false
+X-KDE-Username=
+
+Name=Litteras
+Comment=Mail client
+
+
