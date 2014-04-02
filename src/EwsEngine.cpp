@@ -81,16 +81,15 @@ void EwsEngine::syncItems(const QString &folderId)
 void EwsEngine::syncFolderItemsFinished()
 {
     EwsSyncFolderItemsReply *reply = qobject_cast<EwsSyncFolderItemsReply*>(sender());
-    foreach (const EwsMessage &message, reply->createMessages()) {
+    foreach (const EwsMessage &message, reply->createMessages()) {/*
         emit addMessage(message.id(),
                         message.parentFolderId(),
                         message.subject(),
                         message.from().name(),
                         message.dateTimeReceived(),
                         message.isRead());
-        qDebug() << message.subject() << message.dateTimeCreated() << message.dateTimeReceived();
+        qDebug() << message.subject() << message.dateTimeCreated() << message.dateTimeReceived();*/
     }
 
     reply->deleteLater();
-    qDebug() << reply->document().toString(2);
 }

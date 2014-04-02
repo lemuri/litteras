@@ -22,6 +22,7 @@
 
 #include <EwsQt5/EwsSyncFolderHierarchyReply.h>
 #include <EwsQt5/EwsConnection.h>
+#include <EwsQt5/EwsReply.h>
 
 #include <QStringBuilder>
 
@@ -133,11 +134,11 @@ void EwsFolderModel::sync()
 void EwsFolderModel::syncFolderHierarchyFinished()
 {
     EwsSyncFolderHierarchyReply *response = qobject_cast<EwsSyncFolderHierarchyReply*>(sender());
-    if (response->error()) {
-        qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
-        response->deleteLater();
-        return;
-    }
+//    if (response->error()) {
+//        qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
+//        response->deleteLater();
+//        return;
+//    }
 
     QSettings settings(m_configName, QSettings::NativeFormat);
     settings.beginGroup(QLatin1String("SyncState"));
