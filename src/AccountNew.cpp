@@ -20,7 +20,7 @@
 #include "AccountNew.h"
 #include "ui_AccountNew.h"
 
-#include <EwsQt5/EwsAutoDiscover.h>
+#include <EwsQt5/autodiscover.h>
 
 #include <QPushButton>
 #include <QUuid>
@@ -28,6 +28,8 @@
 //#include <KUser>
 #include <QSettings>
 #include <QDebug>
+
+using namespace Ews;
 
 AccountNew::AccountNew(QWidget *parent) :
     QDialog(parent),
@@ -65,14 +67,14 @@ void AccountNew::slotButtonClicked(int button)
 void AccountNew::commit()
 {
     ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
-    EwsAutoDiscover *autodiscover = new EwsAutoDiscover(this);
+    AutoDiscover *autodiscover = new AutoDiscover(this);
     connect(autodiscover, SIGNAL(finished()), this, SLOT(autoDiscoverFinished()));
     autodiscover->autodiscover(ui->emailAddressLE->text(), ui->usernameLE->text(), ui->passwordLE->text());
 }
 
 void AccountNew::autoDiscoverFinished()
 {
-    EwsAutoDiscover *autodiscover = qobject_cast<EwsAutoDiscover*>(sender());
+    AutoDiscover *autodiscover = qobject_cast<AutoDiscover*>(sender());
     if (autodiscover) {
         qWarning() << Q_FUNC_INFO << autodiscover->errorMessage();
         if (autodiscover->isValid()) {

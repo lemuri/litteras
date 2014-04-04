@@ -20,9 +20,9 @@
 #include "EwsFolderModel.h"
 #include "EwsEngine.h"
 
-#include <EwsQt5/EwsSyncFolderHierarchyReply.h>
-#include <EwsQt5/EwsConnection.h>
-#include <EwsQt5/EwsReply.h>
+#include <EwsQt5/syncfolderhierarchyreply.h>
+#include <EwsQt5/connection.h>
+#include <EwsQt5/reply.h>
 
 #include <QStringBuilder>
 
@@ -30,6 +30,8 @@
 //#include <KConfigGroup>
 
 #include <QDebug>
+
+using namespace Ews;
 
 EwsFolderModel::EwsFolderModel(EwsEngine *parent) :
     QStandardItemModel(parent),
@@ -52,11 +54,11 @@ bool EwsFolderModel::setData(const QModelIndex &index, const QVariant &value, in
 {
     qDebug() << index << value << role;
     if (role == Qt::EditRole) {
-        EwsFolder folder(m_parent->connection(),
+        Ews::Folder folder(m_parent->connection(),
                          index.data(RoleFolderId).toString(),
                          index.data(RoleChangeKey).toString());
         folder.setDisplayName(value.toString());
-        EwsReply *reply = folder.update();
+        Ews::Reply *reply = folder.update();
         connect(reply, SIGNAL(finished()), SLOT(updateFolderFinished()));
     }
     return false;
@@ -125,7 +127,7 @@ void EwsFolderModel::sync()
 //    KConfig config(m_configName, KConfig::SimpleConfig);
 //    KConfigGroup syncGroup(&config, QLatin1String("SyncState"));
     QString lastSyncState = settings.value("SyncState").toString();
-    EwsSyncFolderHierarchyReply *reply = m_parent->connection()->syncFolderHierarch(EwsFolder::AllProperties,
+    Ews::SyncFolderHierarchyReply *reply = m_parent->connection()->syncFolderHierarch(Ews::Folder::AllProperties,
                                                                                     QString(),
                                                                                     lastSyncState);
     connect(reply, SIGNAL(finished()), SLOT(syncFolderHierarchyFinished()));
@@ -133,7 +135,8 @@ void EwsFolderModel::sync()
 
 void EwsFolderModel::syncFolderHierarchyFinished()
 {
-    EwsSyncFolderHierarchyReply *response = qobject_cast<EwsSyncFolderHierarchyReply*>(sender());
+    qDebug() << sender();
+    Ews::SyncFolderHierarchyReply *response = qobject_cast<Ews::SyncFolderHierarchyReply*>(sender());
 //    if (response->error()) {
 //        qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
 //        response->deleteLater();
@@ -146,13 +149,13 @@ void EwsFolderModel::syncFolderHierarchyFinished()
 //    KConfigGroup syncGroup(&config, QLatin1String("SyncState"));
     QString lastSyncState = settings.value("SyncState").toString();
 
-    foreach (const EwsFolder &folder, response->createFolders()) {
-        addFolder(folder);
+    foreach (const Folder &folder, response->createFolders()) {
+//        addFolder(folder);
         emit syncItems(folder.id());
     }
 
-    foreach (const EwsFolder &folder, response->updateFolders()) {
-        addFolder(folder);
+    foreach (const Folder &folder, response->updateFolders()) {
+//        addFolder(folder);
     }
 
     foreach (const QString &folderId, response->deleteFolders()) {
@@ -163,7 +166,7 @@ void EwsFolderModel::syncFolderHierarchyFinished()
         settings.setValue("SyncState", response->syncState());
     }
 
-    response->deleteLater();
+//    response->deleteLater();
 }
 
 void EwsFolderModel::updateFolderFinished()
@@ -177,8 +180,8 @@ void EwsFolderModel::updateFolderFinished()
 //    }
 }
 
-void EwsFolderModel::addFolder(const EwsFolder &folder)
-{
+//void EwsFolderModel::addFolder(const Ews::Folder &folder)
+//{
 //    KConfig config(m_configName, KConfig::SimpleConfig);
 //    KConfigGroup folders(&config, QLatin1String("Folders"));
 //    bool itemChanged = false;
@@ -197,7 +200,7 @@ void EwsFolderModel::addFolder(const EwsFolder &folder)
 
 //        addFolderItem(folder.id(), folder.parentId(), folder.changeKey(), folder.displayName());
 //    }
-}
+//}
 
 void EwsFolderModel::deleteFolder(const QString &folderId)
 {

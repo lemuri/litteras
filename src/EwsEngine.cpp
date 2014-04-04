@@ -19,13 +19,15 @@
 
 #include "EwsEngine.h"
 
-#include <EwsConnection.h>
-#include <EwsSyncFolderHierarchyReply.h>
-#include <EwsSyncFolderItemsReply.h>
+#include <connection.h>
+#include <syncfolderhierarchyreply.h>
+#include <syncfolderitemsreply.h>
 
 #include "EwsFolderModel.h"
 
 #include <QDebug>
+
+using namespace Ews;
 
 EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *parent) :
     QObject(parent),
@@ -36,7 +38,7 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
     QUrl uri = settings.value("ASUrl").toString();
     QUrl credentials = settings.value("URI").toUrl();
     uri.setUserInfo(credentials.userInfo());
-    m_connection = new EwsConnection(this);
+    m_connection = new Ews::Connection(this);
     m_connection->setUri(uri);
 
     m_folderModel = new EwsFolderModel(this);
@@ -60,7 +62,7 @@ EwsFolderModel *EwsEngine::folderModel() const
     return m_folderModel;
 }
 
-EwsConnection *EwsEngine::connection() const
+Ews::Connection *EwsEngine::connection() const
 {
     return m_connection;
 }
@@ -72,7 +74,7 @@ QString EwsEngine::uuid() const
 
 void EwsEngine::syncItems(const QString &folderId)
 {
-    EwsSyncFolderItemsReply *reply = m_connection->syncFolderItems(EwsFolder::AllProperties,
+    SyncFolderItemsReply *reply = m_connection->syncFolderItems(Folder::AllProperties,
                                                                    folderId,
                                                                    10);
     connect(reply, SIGNAL(finished()), SLOT(syncFolderItemsFinished()));
@@ -80,16 +82,16 @@ void EwsEngine::syncItems(const QString &folderId)
 
 void EwsEngine::syncFolderItemsFinished()
 {
-    EwsSyncFolderItemsReply *reply = qobject_cast<EwsSyncFolderItemsReply*>(sender());
-    foreach (const EwsMessage &message, reply->createMessages()) {/*
-        emit addMessage(message.id(),
-                        message.parentFolderId(),
-                        message.subject(),
-                        message.from().name(),
-                        message.dateTimeReceived(),
-                        message.isRead());
-        qDebug() << message.subject() << message.dateTimeCreated() << message.dateTimeReceived();*/
-    }
+    SyncFolderItemsReply *reply = qobject_cast<SyncFolderItemsReply*>(sender());
+//    foreach (const Message &message, reply->createMessages()) {
+//        emit addMessage(message.id(),
+//                        message.parentFolderId(),
+//                        message.subject(),
+//                        message.from().name(),
+//                        message.dateTimeReceived(),
+//                        message.isRead());
+//        qDebug() << message.subject() << message.dateTimeCreated() << message.dateTimeReceived();
+//    }
 
     reply->deleteLater();
 }

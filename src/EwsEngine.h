@@ -24,9 +24,12 @@
 #include <QQueue>
 #include <QSettings>
 
+namespace Ews {
+class Connection;
+class SyncFolderItemsReply;
+}
+
 class EwsFolderModel;
-class EwsConnection;
-class EwsSyncFolderItemsReply;
 class EwsEngine : public QObject
 {
     Q_OBJECT
@@ -34,7 +37,7 @@ public:
     explicit EwsEngine(const QSettings &config, const QString &uuid, QObject *parent = 0);
 
     EwsFolderModel *folderModel() const;
-    EwsConnection *connection() const;
+    Ews::Connection *connection() const;
     QString uuid() const;
 
 signals:
@@ -47,7 +50,7 @@ private slots:
 
 private:
     QString m_uuid;
-    EwsConnection *m_connection;
+    Ews::Connection *m_connection;
     EwsFolderModel *m_folderModel;
 };
 

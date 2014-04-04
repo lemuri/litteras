@@ -23,7 +23,7 @@
 #include <QStandardItemModel>
 #include <QTimer>
 
-#include <EwsQt5/EwsFolder.h>
+#include <EwsQt5/folder.h>
 
 class EwsEngine;
 class EwsFolderModel : public QStandardItemModel
@@ -51,7 +51,7 @@ private slots:
     void updateFolderFinished();
 
 private:
-    void addFolder(const EwsFolder &folder);
+//    void addFolder(const Ews::Folder &folder);
     void deleteFolder(const QString &folderId);
     void addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title);
     QStandardItem *findItem(const QString &id, const QModelIndex &parent = QModelIndex());
