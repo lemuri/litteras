@@ -1,9 +1,7 @@
-include_directories(${CMAKE_BINARY_DIR}
-                    ${CMAKE_CURRENT_BINARY_DIR}
-                    ${CMAKE_CURRENT_SOURCE_DIR}
-)
+file(GLOB QML_SRC qml/*.qml qml/*.js)
 
 set(litteras_SRCS
+    ${QML_SRC}
     AccountNew.cpp
     Accounts.cpp
     highlighter.cpp
@@ -16,7 +14,13 @@ set(litteras_SRCS
     NoSelectionRectDelegate.cpp
     MainUI.cpp
     Litteras.cpp
+    foldermodel.cpp
     main.cpp
+)
+
+qt5_add_resources(litteras_SRCS
+    application.qrc
+    OPTIONS -compress 3 -threshold 3
 )
 
 qt5_wrap_ui(litteras_SRCS

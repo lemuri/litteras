@@ -31,9 +31,10 @@ class EwsFolderModel : public QStandardItemModel
     Q_OBJECT
 public:
     enum FolderRoles {
-        RoleFolderId = Qt::UserRole + 1,
+        RoleFolderId,
         RoleFolderParentId,
-        RoleChangeKey
+        RoleChangeKey,
+        RoleDisplayName
     };
     explicit EwsFolderModel(EwsEngine *parent = 0);
 
@@ -45,13 +46,12 @@ signals:
 
 private slots:
     void init();
-    void initFolders(const QStringList &folderIds);
     void sync();
     void syncFolderHierarchyFinished();
     void updateFolderFinished();
 
 private:
-//    void addFolder(const Ews::Folder &folder);
+    void addFolder(const Ews::Folder &folder);
     void deleteFolder(const QString &folderId);
     void addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title);
     QStandardItem *findItem(const QString &id, const QModelIndex &parent = QModelIndex());
@@ -60,6 +60,7 @@ private:
     QTimer *m_updateTimer;
     QString m_uuid;
     QString m_configName;
+    QHash<int, QByteArray> m_roleNames;
 };
 
 #endif // EWSFOLDERMODEL_H

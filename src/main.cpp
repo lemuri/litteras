@@ -21,38 +21,32 @@
 #include "Litteras.h"
 #include <config.h>
 
+#include "EwsFolderModel.h"
+#include "foldermodel.h"
+#include "MessagesModel.h"
+
 #include <QApplication>
+
+#include <QQmlApplicationEngine>
+#include <qqml.h>
+
 #include <QDebug>
-//#include <KConfig>
-//#include <KAboutData>
-//#include <KCmdLineArgs>
 
 int main(int argc, char **argv)
 {
-//    KAboutData about("litteras",
-//                     "litteras", // DO NOT change this catalog unless you know it will not break translations!
-//                     ki18n("Litteras"),
-//                     APP_VERSION,
-//                     ki18n("Litteras is an Application to Get and Manage Software"),
-//                     KAboutData::License_GPL,
-//                     ki18n("(C) 2013 Daniel Nicoletti"));
+    Q_INIT_RESOURCE(application);
 
-//    about.addAuthor(ki18n("Daniel Nicoletti"), KLocalizedString(), "dantti12@gmail.com", "http://dantti.wordpress.com");
-//    about.setProgramIconName("mail-flag");
-
-//    KCmdLineArgs::init(argc, argv, &about);
-
-//    KUniqueApplication::addCmdLineOptions();
-
-    QCoreApplication::setOrganizationName("Pingloo");
-    QCoreApplication::setOrganizationDomain("pingloo.org");
+    QCoreApplication::setOrganizationName("lemuri");
+    QCoreApplication::setOrganizationDomain("lemuri.org");
     QCoreApplication::setApplicationName("Litteras");
-    QCoreApplication::setApplicationVersion("0.1");
+    QCoreApplication::setApplicationVersion(APP_VERSION);
 
     QApplication app(argc, argv);
 
-    Litteras window;
-    window.newInstance();
+    qmlRegisterType<FolderModel>("org.lemuri.litteras", 1, 0, "FolderModel");
+    qmlRegisterType<MessagesModel>("org.lemuri.litteras", 1, 0, "MessagesModel");
+
+    QQmlApplicationEngine *engine = new QQmlApplicationEngine(QUrl(QLatin1String("qrc:/qml/main.qml")));
 
     return app.exec();
 }

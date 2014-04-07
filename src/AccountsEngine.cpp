@@ -65,6 +65,8 @@ void AccountsEngine::configFileChanged()
         connect(engine, SIGNAL(addMessage(QString,QString,QString,QString,QDateTime,bool)),
                 this, SIGNAL(addMessage(QString,QString,QString,QString,QDateTime,bool)));
         settings.endGroup();
+
+        m_accounts.insert(group, engine);
     }
 //    kDebug();
 //    KConfig config;

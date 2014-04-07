@@ -42,8 +42,8 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
     m_connection->setUri(uri);
 
     m_folderModel = new EwsFolderModel(this);
-    connect(m_folderModel, SIGNAL(syncItems(QString)),
-            SLOT(syncItems(QString)));
+//    connect(m_folderModel, SIGNAL(syncItems(QString)),
+//            SLOT(syncItems(QString)));
 
 //    qDebug() << Q_FUNC_INFO << uri.host() << m_uuid;
 

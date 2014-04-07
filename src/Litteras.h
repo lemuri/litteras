@@ -30,8 +30,6 @@ public:
     Litteras();
     virtual ~Litteras();
 
-    virtual int newInstance();
-
 private:
     MainUI *m_ui;
 };

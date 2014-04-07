@@ -22,15 +22,6 @@
 #include "MainUI.h"
 #include "AccountsEngine.h"
 
-//#include <KGlobal>
-//#include <KStartupInfo>
-//#include <KCmdLineArgs>
-//#include <KStandardDirs>
-//#include <KConfig>
-//#include <KConfigGroup>
-//#include <KCModuleInfo>
-//#include <KWindowSystem>
-
 #include <QStringList>
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -48,13 +39,3 @@ Litteras::~Litteras()
 {
     delete m_ui;
 }
-
-int Litteras::newInstance()
-{
-    m_ui->show();
-//    KWindowSystem::forceActiveWindow(m_ui->winId());
-
-    return 0;
-}
-
-//#include "Litteras.moc"
