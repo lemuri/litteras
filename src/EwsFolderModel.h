@@ -31,7 +31,7 @@ class EwsFolderModel : public QStandardItemModel
     Q_OBJECT
 public:
     enum FolderRoles {
-        RoleFolderId,
+        RoleFolderId = Qt::UserRole,
         RoleFolderParentId,
         RoleChangeKey,
         RoleDisplayName

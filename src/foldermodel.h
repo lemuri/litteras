@@ -9,7 +9,7 @@ class FolderModel : public QAbstractItemModel
     Q_OBJECT
 public:
     enum FolderRoles {
-        RoleFolderId,
+        RoleFolderId = Qt::UserRole,
         RoleFolderParentId,
         RoleChangeKey,
         RoleDisplayName
