@@ -47,7 +47,8 @@ void Accounts::initModel()
     foreach (const QString &group, settings.childGroups()) {
         settings.beginGroup(group);
         QStandardItem *item = new QStandardItem;
-        item->setText(settings.value("EmailAddress").toString());
+        QString email = settings.value("EmailAddress").toString();
+        item->setData(email, Qt::DisplayRole);
         item->setData(settings.value("URI").toString());
         m_model->appendRow(item);
         settings.endGroup();

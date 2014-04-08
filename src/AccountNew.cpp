@@ -31,97 +31,89 @@
 
 using namespace Ews;
 
-AccountNew::AccountNew(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::AccountNew)
+AccountNew::AccountNew(QObject *parent)
 {
-    ui->setupUi(this);
-    connect(ui->emailAddressLE, SIGNAL(textChanged(QString)), SLOT(emailAddressChanged(QString)));
-    ui->usernameL->hide();
-    ui->usernameLE->hide();
-    setModal(true);
 
-    connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(commit()));
-
-//    KUser user;
-//    ui->fullNameLE->setText(user.fullName());
 }
 
 AccountNew::~AccountNew()
 {
-    delete ui;
 }
 
-void AccountNew::slotButtonClicked(int button)
+void AccountNew::setUsername(const QString &username)
 {
-//    if (button == KDialog::Ok) {
-//        enableButton(KDialog::Ok, false);
-//        EwsAutoDiscover *autodiscover = new EwsAutoDiscover(this);
-//        connect(autodiscover, SIGNAL(finished()), this, SLOT(autoDiscoverFinished()));
-//        autodiscover->autodiscover(ui->emailAddressLE->text(), ui->usernameLE->text(), ui->passwordLE->text());
-//    } else {
-//        KDialog::slotButtonClicked(button);
-    //    }
+    m_username = username;
+    m_usernameIsModified = true;
+    emit usernameChanged();
 }
 
-void AccountNew::commit()
+void AccountNew::setEmailAddress(const QString &emailAddress)
 {
-    ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(false);
+    if (!m_usernameIsModified) {
+        m_username = emailAddress.section(QLatin1Char('@'), 0, 0);
+        emit usernameChanged();
+    }
+    m_emailAddress = emailAddress;
+    emit emailAddressChanged();
+}
+
+void AccountNew::process()
+{
+    if (m_processing) {
+        return;
+    }
+
+    m_processing = true;
+    emit processingChanged();
+
     AutoDiscover *autodiscover = new AutoDiscover(this);
-    connect(autodiscover, SIGNAL(finished()), this, SLOT(autoDiscoverFinished()));
-    autodiscover->autodiscover(ui->emailAddressLE->text(), ui->usernameLE->text(), ui->passwordLE->text());
+    connect(autodiscover, &AutoDiscover::finished, this, &AccountNew::autoDiscoverFinished);
+    autodiscover->autodiscover(m_emailAddress, m_username, m_password);
+    qDebug() << m_emailAddress << m_username << m_password;
+}
+
+void AccountNew::save()
+{
+    QSettings settings;
+    settings.beginGroup("Accounts");
+    bool ok = false;
+    for (int i = 0; i < 10; ++i) {
+        QUuid uuid = QUuid::createUuid();
+        QString uuidString;
+        uuidString = uuid.toString().remove(QLatin1Char('}')).remove(QLatin1Char('{'));
+        if (!settings.childKeys().contains(uuidString)) {
+            settings.beginGroup(uuidString);
+            QVariantHash::ConstIterator it = m_settings.constBegin();
+            while (it != m_settings.constEnd()) {
+                settings.setValue(it.key(), it.value());
+                ++it;
+            }
+            settings.setValue("Fullname", m_fullName);
+            settings.endGroup();
+            ok = true;
+            break;
+        }
+    }
+    settings.endGroup();
 }
 
 void AccountNew::autoDiscoverFinished()
 {
     AutoDiscover *autodiscover = qobject_cast<AutoDiscover*>(sender());
-    if (autodiscover) {
+    if (autodiscover && autodiscover->isValid()) {
+        m_settings["EmailAddress"] = autodiscover->emailAddress();
+        m_settings["URI"] = autodiscover->uri().toString();
+        m_settings["ASUrl"] = autodiscover->asUrl();
+        m_settings["OABUrl"] = autodiscover->oabUrl();
+
+        m_valid = true;
+        emit validChanged();
+    } else if (autodiscover && autodiscover->authRequired()) {
+        emit authenticationError();
+    } else if (autodiscover) {
         qWarning() << Q_FUNC_INFO << autodiscover->errorMessage();
-        if (autodiscover->isValid()) {
-            QSettings settings;
-            settings.beginGroup(QLatin1String("Accounts"));
-//            KConfig config;
-//            KConfigGroup accounts(&config, QLatin1String("Accounts"));
-            bool ok = false;
-            for (int i = 0; i < 10; ++i) {
-                QUuid uuid = QUuid::createUuid();
-                QString uuidString;
-                uuidString = uuid.toString().remove(QLatin1Char('}')).remove(QLatin1Char('{'));
-                if (!settings.childKeys().contains(uuidString)) {
-//                    KConfigGroup group(&accounts, uuidString);
-                    settings.beginGroup(uuidString);
-                    settings.setValue("EmailAddress", autodiscover->emailAddress());
-                    settings.setValue("URI", autodiscover->uri().toString());
-                    settings.setValue("ASUrl", autodiscover->asUrl());
-                    settings.setValue("OABUrl", autodiscover->oabUrl());
-                    settings.endGroup();
-                    ok = true;
-                    break;
-                }
-            }
-            settings.endGroup();
-
-            if (ok) {
-                accept();
-            }
-
-//            ui->messageWidget->setText(i18n("Failed to find an UUID for this account, please try again."));
-//            ui->messageWidget->animatedShow();
-        } else {
-            qWarning() << Q_FUNC_INFO << autodiscover->errorMessage();
-//            ui->messageWidget->setText(i18n("Failed to auto configure account:\n%1",
-//                                            autodiscover->errorMessage()));
-//            ui->messageWidget->animatedShow();
-//            ui->usernameL->show();
-//            ui->usernameLE->show();
-//            enableButton(KDialog::Ok, true);
-        }
     }
-}
 
-void AccountNew::emailAddressChanged(const QString &text)
-{
-    if (!ui->usernameLE->isModified()) {
-        ui->usernameLE->setText(text.section(QLatin1Char('@'), 0, 0));
-    }
+    m_processing = false;
+    emit processingChanged();
 }

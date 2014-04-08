@@ -74,8 +74,8 @@ void MainUI::newMail()
 
 void MainUI::on_actionNewAccount_triggered()
 {
-    AccountNew *dialog = new AccountNew;
-    dialog->show();
+//    AccountNew *dialog = new AccountNew;
+//    dialog->show();
 }
 
 void MainUI::on_actionAccounts_triggered()

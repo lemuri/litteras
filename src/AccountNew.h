@@ -20,30 +20,50 @@
 #ifndef ACCOUNTNEW_H
 #define ACCOUNTNEW_H
 
-#include <QWidget>
-#include <QDialog>
+#include <QObject>
+#include <QVariantHash>
 
-namespace Ui {
-class AccountNew;
-}
-
-class AccountNew : public QDialog
+class AccountNew : public QObject
 {
     Q_OBJECT
-    
+    Q_PROPERTY(QString username MEMBER m_username WRITE setUsername NOTIFY usernameChanged)
+    Q_PROPERTY(QString emailAddress MEMBER m_emailAddress WRITE setEmailAddress NOTIFY emailAddressChanged)
+    Q_PROPERTY(QString password MEMBER m_password NOTIFY passwordChanged)
+    Q_PROPERTY(QString fullName MEMBER m_fullName NOTIFY fullNameChanged)
+    Q_PROPERTY(bool processing MEMBER m_processing NOTIFY processingChanged)
+    Q_PROPERTY(bool valid MEMBER m_valid NOTIFY validChanged)
 public:
-    explicit AccountNew(QWidget *parent = 0);
+    explicit AccountNew(QObject *parent = 0);
     ~AccountNew();
 
-    virtual void slotButtonClicked(int button);
+    void setUsername(const QString &username);
+    void setEmailAddress(const QString &emailAddress);
 
-private slots:
-    void commit();
-    void autoDiscoverFinished();
-    void emailAddressChanged(const QString &text);
+signals:
+    void usernameChanged();
+    void emailAddressChanged();
+    void passwordChanged();
+    void fullNameChanged();
+    void processingChanged();
+    void validChanged();
+    void authenticationError();
+
+public slots:
+    void process();
+    void save();
 
 private:
-    Ui::AccountNew *ui;
+    void autoDiscoverFinished();
+
+    QString m_username;
+    QString m_emailAddress;
+    QString m_password;
+    QString m_fullName;
+    bool m_processing = false;
+    bool m_valid = false;
+    bool m_usernameIsModified = false;
+
+    QVariantHash m_settings;
 };
 
 #endif // ACCOUNTNEW_H

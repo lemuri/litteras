@@ -13,13 +13,39 @@ ApplicationWindow {
 
     SystemPalette { id: sysPalette }
 
-    function addPage(dict) {
-        // Remove history forward to the current location
-        if (goNext.enabled) {
-            historyModel.remove(mainView.currentIndex + 1, historyModel.count - (mainView.currentIndex + 1))
+    menuBar: MenuBar {
+        Menu {
+            title: qsTr("&File")
+            MenuItem {
+                text: qsTr("&Exit")
+                onTriggered: Qt.quit()
+            }
         }
-
-        historyModel.append(dict)
+        Menu {
+            title: qsTr("Settings")
+            MenuItem {
+                text: qsTr("New account")
+                onTriggered: {
+                    var component = Qt.createComponent("NewAccount.qml")
+                    if (component.status === Component.Ready) {
+                        component.createObject(mainWindow)
+                    } else {
+                        console.debug(component.errorString())
+                    }
+                }
+            }
+            MenuItem {
+                text: qsTr("Manage accounts")
+                onTriggered: {
+                    var component = Qt.createComponent("Accounts.qml")
+                    if (component.status === Component.Ready) {
+                        component.createObject(mainWindow)
+                    } else {
+                        console.debug(component.errorString())
+                    }
+                }
+            }
+        }
     }
 
     toolBar: ToolBar {

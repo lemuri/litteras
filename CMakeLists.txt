@@ -35,7 +35,7 @@ include(FindPkgConfig)
 
 # We need add -DQT_WIDGETS_LIB when using QtWidgets in Qt 5.
 add_definitions(${Qt5Core_DEFINITIONS})
-add_definitions(-fPIC)
+add_definitions(-fPIC -std=gnu++11)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}

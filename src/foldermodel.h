@@ -3,7 +3,6 @@
 
 #include <QAbstractItemModel>
 
-class AccountsEngine;
 class FolderModel : public QAbstractItemModel
 {
     Q_OBJECT
@@ -38,7 +37,6 @@ private:
     QAbstractItemModel *modelForRow(int row) const;
     int offsetForModel(QAbstractItemModel *model) const;
 
-    AccountsEngine *m_accountsEngine;
     QList<QAbstractItemModel*> m_models;
     QHash<int, QByteArray> m_roleNames;
 };

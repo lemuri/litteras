@@ -78,7 +78,6 @@ QStringList EwsFolderModel::folderIds(const QModelIndex &parent) const
             continue;
         }
 
-        qDebug() << Q_FUNC_INFO << folderIndex.data(RoleFolderId).toString();
         ret << folderIndex.data(RoleFolderId).toString();
 
         ret << folderIds(folderIndex);
@@ -95,9 +94,6 @@ void EwsFolderModel::init()
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
 
-        qDebug() << "_folder_1" << settings.value("DisplayName").toString();
-        qDebug() << "_folder_2" << settings.value("FolderId").toString();
-        qDebug() << "_folder_3" << settings.value("ChangeKey").toString();
         addFolderItem(settings.value("FolderId").toString(),
                       settings.value("ParentId").toString(),
                       settings.value("ChangeKey").toString(),
@@ -124,7 +120,6 @@ void EwsFolderModel::syncFolderHierarchyFinished()
 {
     beginResetModel();
 
-    qDebug() << sender();
     Ews::SyncFolderHierarchyReply *response = qobject_cast<Ews::SyncFolderHierarchyReply*>(sender());
 //    if (response->error()) {
 //        qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
@@ -154,8 +149,6 @@ void EwsFolderModel::syncFolderHierarchyFinished()
     }
 
     endResetModel();
-
-//    response->deleteLater();
 }
 
 void EwsFolderModel::updateFolderFinished()
@@ -246,7 +239,6 @@ void EwsFolderModel::addFolderItem(const QString &id, const QString &parentId, c
     stdItem = new QStandardItem;
     stdItem->setData(title, RoleDisplayName);
     stdItem->setData(id, RoleFolderId);
-    qDebug() << Q_FUNC_INFO << id << stdItem->data(RoleFolderId).toString();
     stdItem->setData(parentId, RoleFolderParentId);
     stdItem->setData(changeKey, RoleChangeKey);
 

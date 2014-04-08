@@ -4,32 +4,24 @@ set(litteras_SRCS
     ${QML_SRC}
     AccountNew.cpp
     Accounts.cpp
-    highlighter.cpp
-    htmleditor.cpp
-    NewMail.cpp
+#    highlighter.cpp
+#    htmleditor.cpp
+#    NewMail.cpp
     MessagesModel.cpp
     EwsFolderModel.cpp
     EwsEngine.cpp
     AccountsEngine.cpp
-    NoSelectionRectDelegate.cpp
-    MainUI.cpp
-    Litteras.cpp
+#    NoSelectionRectDelegate.cpp
+#    MainUI.cpp
+#    Litteras.cpp
     foldermodel.cpp
+    messagesindex.cpp
     main.cpp
 )
 
 qt5_add_resources(litteras_SRCS
     application.qrc
     OPTIONS -compress 3 -threshold 3
-)
-
-qt5_wrap_ui(litteras_SRCS
-    AccountNew.ui
-    Accounts.ui
-    htmleditor.ui
-    inserthtmldialog.ui
-    NewMail.ui
-    MainUI.ui
 )
 
 add_executable(litteras

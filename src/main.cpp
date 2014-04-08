@@ -32,6 +32,17 @@
 
 #include <QDebug>
 
+#include "AccountsEngine.h"
+#include "AccountNew.h"
+
+static QObject *account_engine_provider(QQmlEngine *engine, QJSEngine *scriptEngine)
+{
+    Q_UNUSED(engine)
+    Q_UNUSED(scriptEngine)
+
+    return AccountsEngine::instance();
+}
+
 int main(int argc, char **argv)
 {
     Q_INIT_RESOURCE(application);
@@ -43,8 +54,10 @@ int main(int argc, char **argv)
 
     QApplication app(argc, argv);
 
+    qmlRegisterSingletonType<AccountsEngine>("org.lemuri.litteras", 1, 0, "AccountsEngine", account_engine_provider);
     qmlRegisterType<FolderModel>("org.lemuri.litteras", 1, 0, "FolderModel");
     qmlRegisterType<MessagesModel>("org.lemuri.litteras", 1, 0, "MessagesModel");
+    qmlRegisterType<AccountNew>("org.lemuri.litteras", 1, 0, "AccountNew");
 
     QQmlApplicationEngine *engine = new QQmlApplicationEngine(QUrl(QLatin1String("qrc:/qml/main.qml")));
 

@@ -22,24 +22,28 @@
 #include "EwsEngine.h"
 #include "EwsFolderModel.h"
 
-//#include <KConfig>
-//#include <KConfigGroup>
-//#include <KStandardDirs>
-//#include <KDirWatch>
+#include <QDebug>
 
-//#include <KDebug>
+Q_GLOBAL_STATIC(AccountsEngine, accountsEngine)
 
-AccountsEngine::AccountsEngine(QObject *parent) :
-    QObject(parent)
+AccountsEngine *AccountsEngine::instance()
 {
-//    KDirWatch *confWatch = new KDirWatch(this);
-//    confWatch->addFile(KStandardDirs::locateLocal("config", "litterasrc"));
-//    connect(confWatch, SIGNAL(dirty(QString)), SLOT(configFileChanged()));
-//    connect(confWatch, SIGNAL(created(QString)), SLOT(configFileChanged()));
-//    connect(confWatch, SIGNAL(deleted(QString)), SLOT(configFileChanged()));
-//    confWatch->startScan();
+    return accountsEngine;
+}
 
+AccountsEngine::AccountsEngine(QObject *parent)
+    : QObject(parent)
+    , m_accountsModel(new QStandardItemModel(this))
+{
+    QHash<int, QByteArray> roleNames;
+    roleNames[Qt::UserRole] = "name";
+    m_accountsModel->setItemRoleNames(roleNames);
     configFileChanged();
+}
+
+QAbstractItemModel *AccountsEngine::accountsModel() const
+{
+    return m_accountsModel;
 }
 
 QList<QAbstractItemModel *> AccountsEngine::engineFolderModels()
@@ -61,25 +65,19 @@ void AccountsEngine::configFileChanged()
         }
 
         settings.beginGroup(group);
+
         EwsEngine *engine = new EwsEngine(settings, group, this);
-        connect(engine, SIGNAL(addMessage(QString,QString,QString,QString,QDateTime,bool)),
-                this, SIGNAL(addMessage(QString,QString,QString,QString,QDateTime,bool)));
-        settings.endGroup();
-
+        connect(engine, &EwsEngine::addMessage,
+                this, &AccountsEngine::addMessage);
         m_accounts.insert(group, engine);
-    }
-//    kDebug();
-//    KConfig config;
-//    KConfigGroup accounts(&config, QLatin1String("Accounts"));
-//    foreach (const QString &group, accounts.groupList()) {
-//        if (m_accounts.contains(group)) {
-//            continue;
-//        }
 
-//        KConfigGroup configGroup(&accounts, group);
-//        EwsEngine *engine = new EwsEngine(configGroup, this);
-//        connect(engine, SIGNAL(addMessage(QString,QString,QString,QString,QDateTime,bool)),
-//                this, SIGNAL(addMessage(QString,QString,QString,QString,QDateTime,bool)));
-//        m_accounts.insert(group, engine);
-//    }
+        QStandardItem *item = new QStandardItem;
+        QString email = settings.value("EmailAddress").toString();
+        item->setData(email, Qt::UserRole);
+        item->setData(settings.value("URI").toString());
+        m_accountsModel->appendRow(item);
+        qDebug() << group;
+
+        settings.endGroup();
+    }
 }

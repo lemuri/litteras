@@ -12,8 +12,7 @@ FolderModel::FolderModel(QObject *parent) :
     m_roleNames[RoleChangeKey]      = "roleChangeKey";
     m_roleNames[RoleDisplayName]    = "roleDisplayName";
 
-    m_accountsEngine = new AccountsEngine(this);
-    QList<QAbstractItemModel*> models = m_accountsEngine->engineFolderModels();
+    QList<QAbstractItemModel*> models = AccountsEngine::instance()->engineFolderModels();
     foreach (QAbstractItemModel *model, models) {
         addModel(model);
     }

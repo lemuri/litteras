@@ -21,18 +21,23 @@
 #define ACCOUNTSENGINE_H
 
 #include <QObject>
-#include <QAbstractItemModel>
+#include <QStandardItemModel>
 
 class EwsEngine; //TODO create an abstract engine
 class AccountsEngine : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QObject* accountsModel READ accountsModel NOTIFY changed)
 public:
+    static AccountsEngine* instance();
     explicit AccountsEngine(QObject *parent = 0);
+
+    QAbstractItemModel *accountsModel() const;
 
     QList<QAbstractItemModel*> engineFolderModels();
 
 signals:
+    void changed();
     void addMessage(const QString &id, const QString &parentId, const QString &subject, const QString &from, const QDateTime &received, bool read);
 
 private slots:
@@ -40,6 +45,7 @@ private slots:
 
 private:
     QHash<QString, EwsEngine*> m_accounts;
+    QStandardItemModel *m_accountsModel;
 };
 
 #endif // ACCOUNTSENGINE_H
