@@ -113,6 +113,7 @@ void EwsFolderModel::sync()
     Ews::SyncFolderHierarchyReply *reply = m_parent->connection()->syncFolderHierarch(Ews::Folder::AllProperties,
                                                                                     QString(),
                                                                                     lastSyncState);
+    qDebug() << Q_FUNC_INFO << reply;
     connect(reply, SIGNAL(finished()), SLOT(syncFolderHierarchyFinished()));
 }
 
@@ -120,12 +121,13 @@ void EwsFolderModel::syncFolderHierarchyFinished()
 {
     beginResetModel();
 
+
     Ews::SyncFolderHierarchyReply *response = qobject_cast<Ews::SyncFolderHierarchyReply*>(sender());
-//    if (response->error()) {
-//        qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
-//        response->deleteLater();
-//        return;
-//    }
+    qDebug() << Q_FUNC_INFO << response->messageText() << response->errorMessage();
+    if (response->error()) {
+        qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
+        return;
+    }
 
     foreach (const Folder &folder, response->createFolders()) {
         addFolder(folder);

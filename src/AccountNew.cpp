@@ -25,15 +25,23 @@
 #include <QPushButton>
 #include <QUuid>
 
-//#include <KUser>
 #include <QSettings>
 #include <QDebug>
+
+#include <pwd.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 using namespace Ews;
 
 AccountNew::AccountNew(QObject *parent)
 {
-
+    __uid_t uid = geteuid();
+    passwd *pwd = getpwuid(uid);
+    if (pwd) {
+        QString gecos = QString::fromLocal8Bit(pwd->pw_gecos);
+        m_fullName = gecos.section(QLatin1Char(','), 0, 0);
+    }
 }
 
 AccountNew::~AccountNew()
@@ -69,7 +77,6 @@ void AccountNew::process()
     AutoDiscover *autodiscover = new AutoDiscover(this);
     connect(autodiscover, &AutoDiscover::finished, this, &AccountNew::autoDiscoverFinished);
     autodiscover->autodiscover(m_emailAddress, m_username, m_password);
-    qDebug() << m_emailAddress << m_username << m_password;
 }
 
 void AccountNew::save()
@@ -109,7 +116,7 @@ void AccountNew::autoDiscoverFinished()
         m_valid = true;
         emit validChanged();
     } else if (autodiscover && autodiscover->authRequired()) {
-        emit authenticationError();
+        emit authenticationError(autodiscover->uri().host());
     } else if (autodiscover) {
         qWarning() << Q_FUNC_INFO << autodiscover->errorMessage();
     }

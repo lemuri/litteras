@@ -7,9 +7,21 @@ ApplicationWindow {
     id: mainWindow
     width: 800
     height: 600
-    visible: true
 
     title: "Litteras"
+
+    property var newAccount: null
+
+    function addAccount() {
+        if (!newAccount) {
+            var component = Qt.createComponent("NewAccount.qml")
+            if (component.status === Component.Ready) {
+                newAccount = component.createObject(mainWindow)
+            } else {
+                console.debug(component.errorString())
+            }
+        }
+    }
 
     SystemPalette { id: sysPalette }
 
@@ -25,14 +37,7 @@ ApplicationWindow {
             title: qsTr("Settings")
             MenuItem {
                 text: qsTr("New account")
-                onTriggered: {
-                    var component = Qt.createComponent("NewAccount.qml")
-                    if (component.status === Component.Ready) {
-                        component.createObject(mainWindow)
-                    } else {
-                        console.debug(component.errorString())
-                    }
-                }
+                onTriggered: addAccount()
             }
             MenuItem {
                 text: qsTr("Manage accounts")
@@ -103,6 +108,13 @@ ApplicationWindow {
         Rectangle {
             width: 200
             color: "gray"
+        }
+    }
+
+    Component.onCompleted: {
+        mainWindow.visible = true
+        if (AccountsEngine.count === 0) {
+            addAccount()
         }
     }
 }

@@ -28,6 +28,8 @@ class AccountsEngine : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QObject* accountsModel READ accountsModel NOTIFY changed)
+    Q_PROPERTY(int count MEMBER m_accountsCount NOTIFY countChanged)
+    Q_PROPERTY(bool hadAccounts MEMBER m_hadAccounts NOTIFY countChanged)
 public:
     static AccountsEngine* instance();
     explicit AccountsEngine(QObject *parent = 0);
@@ -38,12 +40,16 @@ public:
 
 signals:
     void changed();
+    void countChanged();
+    void hadAccountsChanged();
     void addMessage(const QString &id, const QString &parentId, const QString &subject, const QString &from, const QDateTime &received, bool read);
 
 private slots:
     void configFileChanged();
 
 private:
+    int m_accountsCount = 0;
+    bool m_hadAccounts = false;
     QHash<QString, EwsEngine*> m_accounts;
     QStandardItemModel *m_accountsModel;
 };

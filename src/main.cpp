@@ -34,6 +34,7 @@
 
 #include "AccountsEngine.h"
 #include "AccountNew.h"
+#include "iconprovider.h"
 
 static QObject *account_engine_provider(QQmlEngine *engine, QJSEngine *scriptEngine)
 {
@@ -59,7 +60,9 @@ int main(int argc, char **argv)
     qmlRegisterType<MessagesModel>("org.lemuri.litteras", 1, 0, "MessagesModel");
     qmlRegisterType<AccountNew>("org.lemuri.litteras", 1, 0, "AccountNew");
 
-    QQmlApplicationEngine *engine = new QQmlApplicationEngine(QUrl(QLatin1String("qrc:/qml/main.qml")));
+    QQmlApplicationEngine *engine = new QQmlApplicationEngine;
+    engine->addImageProvider(QLatin1String("icon"), new IconProvider);
+    engine->load(QUrl(QLatin1String("qrc:/qml/main.qml")));
 
     return app.exec();
 }

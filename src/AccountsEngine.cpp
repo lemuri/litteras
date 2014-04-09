@@ -76,7 +76,13 @@ void AccountsEngine::configFileChanged()
         item->setData(email, Qt::UserRole);
         item->setData(settings.value("URI").toString());
         m_accountsModel->appendRow(item);
-        qDebug() << group;
+        ++m_accountsCount;
+        emit countChanged();
+
+        if (!m_hadAccounts) {
+            m_hadAccounts = true;
+            emit hadAccountsChanged();
+        }
 
         settings.endGroup();
     }

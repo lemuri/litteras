@@ -46,7 +46,7 @@ signals:
     void fullNameChanged();
     void processingChanged();
     void validChanged();
-    void authenticationError();
+    void authenticationError(const QString &server);
 
 public slots:
     void process();

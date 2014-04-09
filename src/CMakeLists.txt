@@ -14,6 +14,7 @@ set(litteras_SRCS
 #    NoSelectionRectDelegate.cpp
 #    MainUI.cpp
 #    Litteras.cpp
+    iconprovider.cpp
     foldermodel.cpp
     messagesindex.cpp
     main.cpp
