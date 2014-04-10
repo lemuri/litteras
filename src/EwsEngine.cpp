@@ -52,9 +52,9 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
 
 void EwsEngine::update()
 {
-    foreach (const QString &folderId, m_folderModel->folderIds()) {
-        syncItems(folderId);
-    }
+//    foreach (const QString &folderId, m_folderModel->folderIds()) {
+//        syncItems(folderId);
+//    }
 }
 
 EwsFolderModel *EwsEngine::folderModel() const

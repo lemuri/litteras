@@ -42,9 +42,15 @@ Window {
             username.selectAll()
             username.forceActiveFocus()
 
-            warningLabel.text = qsTr("Authentication with \"%1\" has failed. Please check you username and password and try again.").arg(server)
-            warningLabel.visible = true
+            warningLabel.text = qsTr("Authentication with \"%1\" has failed. Please check your username and password and try again.").arg(server)
         }
+    }
+
+    Text {
+        anchors.bottom: parent.bottom
+        opacity: 0.1
+        font.pixelSize: parent.width / 2
+        text: "@"
     }
 
     ColumnLayout {
@@ -53,6 +59,8 @@ Window {
 
         StackView {
             id: stackView
+            Layout.alignment: Qt.AlignRight
+            Layout.maximumWidth: parent.width * 0.7
             Layout.fillWidth: true
             Layout.fillHeight: true
 
@@ -60,11 +68,18 @@ Window {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 visible: !accountNew.processing
-                title: qsTr("Please fill the following fields to setup your mail account:")
+                title: qsTr("Setup new account")
 
                 GridLayout {
                     anchors.fill: parent
                     columns: 3
+
+                    Label {
+                        Layout.columnSpan: 3
+                        Layout.fillWidth: true
+                        wrapMode: Text.WordWrap
+                        text: qsTr("Please fill the following fields to setup your mail account:")
+                    }
 
                     Label {
                         Layout.alignment: Qt.AlignRight
@@ -108,7 +123,7 @@ Window {
                         width: height
                         sourceSize.height: height
                         sourceSize.width: height
-                        source: "image://icon/task-attempt"
+                        source: "image://icon/arrow-left"
                     }
 
                     Label {
@@ -128,41 +143,47 @@ Window {
                         Layout.fillHeight: true
                         Layout.fillWidth: true
                         Layout.columnSpan: 3
-                        Row {
-                            anchors.bottom: parent.bottom
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            visible: accountNew.processing
+                    }
 
-                            BusyIndicator {
-                                id: busy
-                                height: busyLabel.height
-                                running: parent.visible
-                            }
-                            Label {
-                                id: busyLabel
-                                width: contentWidth
-                                text: qsTr("Please wait while we try to get in contact with the mail servers")
-                            }
+                    RowLayout {
+                        Layout.columnSpan: 3
+                        Layout.alignment: Qt.AlignCenter
+                        visible: accountNew.processing
+
+                        BusyIndicator {
+                            Layout.alignment: Qt.AlignTop
+                            Layout.maximumWidth: fullName.height
+                            id: busy
+                            running: parent.visible
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            id: busyLabel
+                            wrapMode: Text.WordWrap
+                            text: qsTr("Please wait while we try to get in contact with the mail servers")
                         }
                     }
 
-                    Image {
-                        Layout.maximumWidth: height
-                        Layout.alignment: Qt.AlignRight | Qt.AlignTop
-                        height: username.height
-                        width: height
-                        visible: warningLabel.visible
-                        sourceSize.height: height
-                        sourceSize.width: height
-                        source: "image://icon/task-attention"
-                    }
-                    Label {
-                        Layout.columnSpan: 2
-                        Layout.fillWidth: true
-                        id: warningLabel
-                        visible: false
-                        width: contentWidth
-                        wrapMode: Text.WordWrap
+                    RowLayout {
+                        id: warningRow
+                        Layout.columnSpan: 3
+                        Layout.alignment: Qt.AlignCenter
+                        visible: !accountNew.processing && warningLabel.text.length
+
+                        Image {
+                            Layout.alignment: Qt.AlignTop
+                            Layout.maximumWidth: fullName.height
+                            height: username.height
+                            width: height
+                            sourceSize.height: height
+                            sourceSize.width: height
+                            source: "image://icon/task-attention"
+                        }
+                        Label {
+                            Layout.fillWidth: true
+                            id: warningLabel
+                            wrapMode: Text.WordWrap
+                        }
                     }
                 }
             }
@@ -172,7 +193,6 @@ Window {
             Layout.columnSpan: 3
 
             Button {
-                iconName: "dialog-cancel"
                 text: qsTr("Cancel")
                 onClicked: root.destroy()
             }
@@ -180,7 +200,6 @@ Window {
             Item { Layout.fillWidth: true }
 
             Button {
-                iconName: "go-previous-view"
                 text: qsTr("Back")
                 enabled: stackView.depth > 1
                 onClicked: stackView.pop()
@@ -188,12 +207,13 @@ Window {
 
             Button {
                 id: nextButton
-                iconName: "go-next-view"
                 isDefault: true
                 text: accountNew.valid ? qsTr("Finish") : qsTr("Continue")
                 onClicked: next()
             }
         }
+
+        Keys.onEscapePressed: root.destroy()
     }
 
     Component.onCompleted: {
