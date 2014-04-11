@@ -18,7 +18,7 @@
  ***************************************************************************/
 
 #include "AccountNew.h"
-#include "ui_AccountNew.h"
+#include "AccountsEngine.h"
 
 #include <EwsQt5/autodiscover.h>
 
@@ -115,6 +115,8 @@ void AccountNew::save()
         }
     }
     settings.endGroup();
+
+    AccountsEngine::instance()->configFileChanged();
 }
 
 void AccountNew::autoDiscoverFinished()

@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QQueue>
 #include <QSettings>
+#include <QUrl>
 
 namespace Ews {
 class Connection;
@@ -49,6 +50,11 @@ private slots:
     void syncFolderItemsFinished();
 
 private:
+    void checkDNS();
+    void checkDNSFinished();
+
+    QUrl m_internalUri;
+    QUrl m_externalUri;
     QString m_uuid;
     Ews::Connection *m_connection;
     EwsFolderModel *m_folderModel;

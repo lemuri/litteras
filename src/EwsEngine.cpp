@@ -25,6 +25,7 @@
 
 #include "EwsFolderModel.h"
 
+#include <QDnsLookup>
 #include <QDebug>
 
 using namespace Ews;
@@ -33,19 +34,24 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
     QObject(parent),
     m_uuid(uuid)
 {
-
     // First thing to do is setup our connection
-    QUrl uri = settings.value("ASUrl").toString();
+    m_internalUri = settings.value("internalASUrl").toString();
+    m_externalUri = settings.value("externalASUrl").toString();
+
     QUrl credentials = settings.value("URI").toUrl();
-    uri.setUserInfo(credentials.userInfo());
+    m_internalUri.setUserInfo(credentials.userInfo());
+    m_externalUri.setUserInfo(credentials.userInfo());
+
     m_connection = new Ews::Connection(this);
-    m_connection->setUri(uri);
+    m_connection->setUri(m_internalUri);
 
     m_folderModel = new EwsFolderModel(this);
 //    connect(m_folderModel, SIGNAL(syncItems(QString)),
 //            SLOT(syncItems(QString)));
 
 //    qDebug() << Q_FUNC_INFO << uri.host() << m_uuid;
+
+    checkDNS();
 
     update();
 }
@@ -94,4 +100,44 @@ void EwsEngine::syncFolderItemsFinished()
 //    }
 
     reply->deleteLater();
+}
+
+void EwsEngine::checkDNS()
+{
+    qDebug() << "============= " << m_internalUri << m_externalUri.host();
+    QDnsLookup *dns = new QDnsLookup(this);
+    connect(dns, &QDnsLookup::finished,
+            this, &EwsEngine::checkDNSFinished);
+
+    dns->setProperty("host", m_internalUri.host());
+    dns->setType(QDnsLookup::ANY);
+    dns->setName(m_internalUri.host());
+    dns->lookup();
+
+    dns = new QDnsLookup(this);
+    connect(dns, &QDnsLookup::finished,
+            this, &EwsEngine::checkDNSFinished);
+
+    dns->setProperty("host", m_externalUri.host());
+    dns->setType(QDnsLookup::ANY);
+    dns->setName(m_externalUri.host());
+    dns->lookup();
+}
+
+void EwsEngine::checkDNSFinished()
+{
+    QDnsLookup *dns = qobject_cast<QDnsLookup*>(sender());
+    qDebug() << Q_FUNC_INFO << dns << dns->name() << dns->error() << dns->errorString();
+    if (dns->property("host").toString() == m_internalUri.host()) {
+        if (dns->error()) {
+            connection()->setUri(m_externalUri);
+            update();
+        }
+    } else {
+        if (dns->error()) {
+            connection()->setUri(m_internalUri);
+            update();
+        }
+    }
+    dns->deleteLater();
 }

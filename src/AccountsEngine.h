@@ -44,7 +44,7 @@ signals:
     void hadAccountsChanged();
     void addMessage(const QString &id, const QString &parentId, const QString &subject, const QString &from, const QDateTime &received, bool read);
 
-private slots:
+public slots:
     void configFileChanged();
 
 private:
