@@ -4,5 +4,6 @@
         <file>qml/Accounts.qml</file>
         <file>qml/NewAccount.qml</file>
         <file>qml/BusyMessage.qml</file>
+        <file>qml/NewAccountServer.qml</file>
     </qresource>
 </RCC>

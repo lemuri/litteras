@@ -26,6 +26,7 @@
 class AccountNew : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QString serverAddress MEMBER m_serverAddress WRITE setServerAddress NOTIFY serverAddressChanged)
     Q_PROPERTY(QString username MEMBER m_username WRITE setUsername NOTIFY usernameChanged)
     Q_PROPERTY(QString emailAddress MEMBER m_emailAddress WRITE setEmailAddress NOTIFY emailAddressChanged)
     Q_PROPERTY(QString password MEMBER m_password NOTIFY passwordChanged)
@@ -36,10 +37,12 @@ public:
     explicit AccountNew(QObject *parent = 0);
     ~AccountNew();
 
+    void setServerAddress(const QString &serverAddress);
     void setUsername(const QString &username);
     void setEmailAddress(const QString &emailAddress);
 
 signals:
+    void serverAddressChanged();
     void usernameChanged();
     void emailAddressChanged();
     void passwordChanged();
@@ -47,6 +50,7 @@ signals:
     void processingChanged();
     void validChanged();
     void authenticationError(const QString &server);
+    void setupServer();
 
 public slots:
     void process();
@@ -55,6 +59,7 @@ public slots:
 private:
     void autoDiscoverFinished();
 
+    QString m_serverAddress;
     QString m_username;
     QString m_emailAddress;
     QString m_password;
@@ -62,6 +67,7 @@ private:
     bool m_processing = false;
     bool m_valid = false;
     bool m_usernameIsModified = false;
+    bool m_serverAddressIsModified = false;
 
     QVariantHash m_settings;
 };

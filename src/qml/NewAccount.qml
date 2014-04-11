@@ -44,6 +44,9 @@ Window {
 
             warningLabel.text = qsTr("Authentication with \"%1\" has failed. Please check your username and password and try again.").arg(server)
         }
+        onSetupServer: {
+            stackView.push({item: Qt.resolvedUrl("NewAccountServer.qml")})
+        }
     }
 
     Text {
@@ -63,6 +66,28 @@ Window {
             Layout.maximumWidth: parent.width * 0.7
             Layout.fillWidth: true
             Layout.fillHeight: true
+
+            delegate: StackViewDelegate {
+                function transitionFinished(properties)
+                {
+                    properties.exitItem.opacity = 1
+                }
+
+                pushTransition: StackViewTransition {
+                    PropertyAnimation {
+                        target: enterItem
+                        property: "opacity"
+                        from: 0
+                        to: 1
+                    }
+                    PropertyAnimation {
+                        target: exitItem
+                        property: "opacity"
+                        from: 1
+                        to: 0
+                    }
+                }
+            }
 
             initialItem: GroupBox {
                 Layout.fillWidth: true

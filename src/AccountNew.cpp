@@ -48,6 +48,13 @@ AccountNew::~AccountNew()
 {
 }
 
+void AccountNew::setServerAddress(const QString &serverAddress)
+{
+    m_serverAddress = serverAddress;
+    m_serverAddressIsModified = true;
+    emit serverAddressChanged();
+}
+
 void AccountNew::setUsername(const QString &username)
 {
     m_username = username;
@@ -61,6 +68,12 @@ void AccountNew::setEmailAddress(const QString &emailAddress)
         m_username = emailAddress.section(QLatin1Char('@'), 0, 0);
         emit usernameChanged();
     }
+
+    if (!m_serverAddressIsModified) {
+        m_serverAddress = emailAddress.section(QLatin1Char('@'), 1, 1);
+        emit serverAddressChanged();
+    }
+
     m_emailAddress = emailAddress;
     emit emailAddressChanged();
 }
@@ -76,7 +89,7 @@ void AccountNew::process()
 
     AutoDiscover *autodiscover = new AutoDiscover(this);
     connect(autodiscover, &AutoDiscover::finished, this, &AccountNew::autoDiscoverFinished);
-    autodiscover->autodiscover(m_emailAddress, m_username, m_password);
+    autodiscover->autodiscover(m_emailAddress, m_serverAddress, m_username, m_password);
 }
 
 void AccountNew::save()
@@ -110,15 +123,23 @@ void AccountNew::autoDiscoverFinished()
     if (autodiscover && autodiscover->isValid()) {
         m_settings["EmailAddress"] = autodiscover->emailAddress();
         m_settings["URI"] = autodiscover->uri().toString();
-        m_settings["ASUrl"] = autodiscover->asUrl();
-        m_settings["OABUrl"] = autodiscover->oabUrl();
+        m_settings["internalASUrl"] = autodiscover->internalASUrl();
+        m_settings["externalASUrl"] = autodiscover->externalASUrl();
+
+        if (autodiscover->uri().host() != m_serverAddress) {
+            m_serverAddress = autodiscover->uri().host();
+        }
 
         m_valid = true;
         emit validChanged();
+        emit setupServer();
     } else if (autodiscover && autodiscover->authRequired()) {
         emit authenticationError(autodiscover->uri().host());
     } else if (autodiscover) {
         qWarning() << Q_FUNC_INFO << autodiscover->errorMessage();
+        emit setupServer();
+    } else {
+        emit setupServer();
     }
 
     m_processing = false;

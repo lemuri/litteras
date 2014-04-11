@@ -26,9 +26,6 @@
 
 #include <QStringBuilder>
 
-//#include <KConfig>
-//#include <KConfigGroup>
-
 #include <QDebug>
 
 using namespace Ews;
@@ -40,6 +37,7 @@ EwsFolderModel::EwsFolderModel(EwsEngine *parent) :
 {
     m_uuid = parent->uuid();
     m_configName = QLatin1String("litteras-") % m_uuid;
+    m_settings = new QSettings(m_configName, QSettings::IniFormat);
 
     m_roleNames[RoleFolderId]       = "roleFolderId";
     m_roleNames[RoleFolderParentId] = "roleFolderParentId";
@@ -88,28 +86,31 @@ QStringList EwsFolderModel::folderIds(const QModelIndex &parent) const
 
 void EwsFolderModel::init()
 {
-    QSettings settings(m_configName, QSettings::NativeFormat);
-
-    int size = settings.beginReadArray("Folders");
+    int size = m_settings->beginReadArray("Folders");
     for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
+        m_settings->setArrayIndex(i);
 
-        addFolderItem(settings.value("FolderId").toString(),
-                      settings.value("ParentId").toString(),
-                      settings.value("ChangeKey").toString(),
-                      settings.value("DisplayName").toString());
+        addFolderItem(m_settings->value("FolderId").toString(),
+                      m_settings->value("ParentId").toString(),
+                      m_settings->value("ChangeKey").toString(),
+                      m_settings->value("DisplayName").toString());
     }
-    settings.endArray();
+    m_settings->endArray();
 
     sync();
 }
 
 void EwsFolderModel::sync()
 {
-    QSettings settings(m_configName, QSettings::NativeFormat);
-    qDebug() << settings.fileName();
-    settings.beginGroup("SyncState");
-    QString lastSyncState = settings.value("SyncState").toString();
+    qDebug() << Q_FUNC_INFO << m_configName;
+    qDebug() << Q_FUNC_INFO << m_parent;
+    qDebug() << Q_FUNC_INFO << m_parent->connection();
+    qDebug() << Q_FUNC_INFO << m_parent->connection()->serverVersion();
+
+    m_settings->beginGroup("SyncState");
+    QString lastSyncState = m_settings->value("SyncState").toString();
+    m_settings->endGroup();
+
     Ews::SyncFolderHierarchyReply *reply = m_parent->connection()->syncFolderHierarch(Ews::Folder::AllProperties,
                                                                                     QString(),
                                                                                     lastSyncState);
@@ -142,13 +143,12 @@ void EwsFolderModel::syncFolderHierarchyFinished()
         deleteFolder(folderId);
     }
 
-    QSettings settings(m_configName, QSettings::NativeFormat);
-    settings.beginGroup("SyncState");
-
-    QString lastSyncState = settings.value("SyncState").toString();
+    m_settings->beginGroup("SyncState");
+    QString lastSyncState = m_settings->value("SyncState").toString();
     if (lastSyncState != response->syncState()) {
-        settings.setValue("SyncState", response->syncState());
+        m_settings->setValue("SyncState", response->syncState());
     }
+    m_settings->endGroup();
 
     endResetModel();
 }
@@ -166,24 +166,22 @@ void EwsFolderModel::updateFolderFinished()
 
 void EwsFolderModel::addFolder(const Ews::Folder &folder)
 {
-    QSettings settings(m_configName, QSettings::NativeFormat);
-
     QStandardItem *stdItem = findItem(folder.id());
     if (!stdItem) {
-        int size = settings.beginReadArray("Folders");
-        settings.endArray();
+        int size = m_settings->beginReadArray("Folders");
+        m_settings->endArray();
 
-        settings.beginWriteArray("Folders");
-        settings.setArrayIndex(size);
+        m_settings->beginWriteArray("Folders");
+        m_settings->setArrayIndex(size);
 
-        settings.setValue("FolderId", folder.id());
-        settings.setValue("ChangeKey", folder.changeKey());
-        settings.setValue("ParentId", folder.parentId());
-        settings.setValue("DisplayName", folder.displayName());
+        m_settings->setValue("FolderId", folder.id());
+        m_settings->setValue("ChangeKey", folder.changeKey());
+        m_settings->setValue("ParentId", folder.parentId());
+        m_settings->setValue("DisplayName", folder.displayName());
 
         addFolderItem(folder.id(), folder.parentId(), folder.changeKey(), folder.displayName());
 
-        settings.endArray();
+        m_settings->endArray();
 
         return;
     }
@@ -210,9 +208,8 @@ void EwsFolderModel::addFolder(const Ews::Folder &folder)
 
 void EwsFolderModel::deleteFolder(const QString &folderId)
 {
-    QSettings settings(m_configName, QSettings::NativeFormat);
-    settings.beginGroup("Folders");
-    settings.remove(folderId);
+    m_settings->beginGroup("Folders");
+    m_settings->remove(folderId);
 
     QStandardItem *stdItem = findItem(folderId);
     if (stdItem) {

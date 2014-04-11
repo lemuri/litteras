@@ -85,7 +85,7 @@ QHash<int, QByteArray> FolderModel::roleNames() const
 void FolderModel::insertingRows(const QModelIndex &parent, int first, int last)
 {
     // The model is inserting rows
-    qDebug() << parent << first << last;
+    qDebug() << "insert " << parent << first << last << sender();
     int offset = offsetForModel(qobject_cast<QAbstractItemModel*>(sender()));
     beginInsertRows(QModelIndex(),
                     offset + first,
@@ -94,6 +94,7 @@ void FolderModel::insertingRows(const QModelIndex &parent, int first, int last)
 
 void FolderModel::insertedRows(const QModelIndex &parent, int first, int last)
 {
+    qDebug() << "inserted " << parent << first << last << sender();
     endInsertRows();
 }
 

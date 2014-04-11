@@ -25,6 +25,7 @@
 
 #include <EwsQt5/folder.h>
 
+class QSettings;
 class EwsEngine;
 class EwsFolderModel : public QStandardItemModel
 {
@@ -56,6 +57,7 @@ private:
     void addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title);
     QStandardItem *findItem(const QString &id, const QModelIndex &parent = QModelIndex());
 
+    QSettings *m_settings;
     EwsEngine *m_parent;
     QTimer *m_updateTimer;
     QString m_uuid;
