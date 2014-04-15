@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 
     QCoreApplication::setOrganizationName("lemuri");
     QCoreApplication::setOrganizationDomain("lemuri.org");
-    QCoreApplication::setApplicationName("Litteras");
+    QCoreApplication::setApplicationName("litteras");
     QCoreApplication::setApplicationVersion(APP_VERSION);
 
     QApplication app(argc, argv);

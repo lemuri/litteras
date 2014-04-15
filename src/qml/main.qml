@@ -92,9 +92,10 @@ ApplicationWindow {
                 anchors.fill: parent
                 ListView {
                     id: folderView
-                    model: FolderModel {}
-                    delegate: Text {
-                        text: model.roleDisplayName
+                    model: FolderModel {
+                        id: folderModel
+                    }
+                    delegate: FolderDelegate {
                     }
                 }
             }

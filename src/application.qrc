@@ -5,5 +5,6 @@
         <file>qml/NewAccount.qml</file>
         <file>qml/BusyMessage.qml</file>
         <file>qml/NewAccountServer.qml</file>
+        <file>qml/FolderDelegate.qml</file>
     </qresource>
 </RCC>

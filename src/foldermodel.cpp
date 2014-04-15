@@ -10,6 +10,9 @@ FolderModel::FolderModel(QObject *parent) :
     m_roleNames[RoleFolderId]       = "roleFolderId";
     m_roleNames[RoleFolderParentId] = "roleFolderParentId";
     m_roleNames[RoleChangeKey]      = "roleChangeKey";
+    m_roleNames[RoleDepth]          = "roleDepth";
+    m_roleNames[RoleHasChildren]    = "roleHasChildren";
+    m_roleNames[RoleExpanded]       = "roleExpanded";
     m_roleNames[RoleDisplayName]    = "roleDisplayName";
 
     QList<QAbstractItemModel*> models = AccountsEngine::instance()->engineFolderModels();
@@ -82,10 +85,19 @@ QHash<int, QByteArray> FolderModel::roleNames() const
     return m_roleNames;
 }
 
+void FolderModel::toggleChildrenExpand(int row)
+{
+    QAbstractItemModel *model = modelForRow(row);
+    int offset = offsetForModel(model);
+
+    QModelIndex modelIndex = model->index(row - offset, 0);
+    bool expanded = modelIndex.data(RoleExpanded).toBool();
+    model->setData(modelIndex, !expanded, RoleExpanded);
+}
+
 void FolderModel::insertingRows(const QModelIndex &parent, int first, int last)
 {
     // The model is inserting rows
-    qDebug() << "insert " << parent << first << last << sender();
     int offset = offsetForModel(qobject_cast<QAbstractItemModel*>(sender()));
     beginInsertRows(QModelIndex(),
                     offset + first,
@@ -94,8 +106,18 @@ void FolderModel::insertingRows(const QModelIndex &parent, int first, int last)
 
 void FolderModel::insertedRows(const QModelIndex &parent, int first, int last)
 {
-    qDebug() << "inserted " << parent << first << last << sender();
     endInsertRows();
+}
+
+void FolderModel::slotDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
+{
+    QAbstractItemModel *model = qobject_cast<QAbstractListModel*>(sender());
+    int offset = offsetForModel(model);
+    offset = 0;
+    qDebug() << Q_FUNC_INFO << offset;
+    emit dataChanged(createIndex(topLeft.row() + offset, 0, model),
+                     createIndex(bottomRight.row() + offset, 0, model),
+                     roles);
 }
 
 void FolderModel::addModel(QAbstractItemModel *model)
@@ -114,6 +136,8 @@ void FolderModel::addModel(QAbstractItemModel *model)
             this, SLOT(insertingRows(QModelIndex,int,int)));
     connect(model, SIGNAL(rowsInserted(QModelIndex,int,int)),
             this, SLOT(insertedRows(QModelIndex,int,int)));
+    connect(model, &QAbstractItemModel::dataChanged,
+            this, &FolderModel::slotDataChanged);
 
     if (model->rowCount()) {
         endInsertRows();

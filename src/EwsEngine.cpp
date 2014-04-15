@@ -25,7 +25,9 @@
 
 #include "EwsFolderModel.h"
 
+#include <QStandardPaths>
 #include <QDnsLookup>
+#include <QDir>
 #include <QDebug>
 
 using namespace Ews;
@@ -45,7 +47,11 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
     m_connection = new Ews::Connection(this);
     m_connection->setUri(m_internalUri);
 
-    m_folderModel = new EwsFolderModel(this);
+    QDir dataLocation = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    if (!dataLocation.exists() && !dataLocation.mkpath(dataLocation.absolutePath())) {
+        qWarning() << "Failed to create data directory" << dataLocation.absolutePath();
+    }
+    m_folderModel = new EwsFolderModel(dataLocation.absolutePath(), this);
 //    connect(m_folderModel, SIGNAL(syncItems(QString)),
 //            SLOT(syncItems(QString)));
 

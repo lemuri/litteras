@@ -9,13 +9,18 @@
 #include <QStringBuilder>
 #include <QDateTime>
 #include <QDebug>
+#include <QStandardPaths>
 #include <QImage>
 
 #define ABLF_MAX 10000
 
 MessagesIndex::MessagesIndex()
 {
-    m_indexPath = QDir::homePath() % QLatin1String(".litteras/index");
+    QDir dataLocation = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    if (!dataLocation.exists() && !dataLocation.mkpath(dataLocation.absolutePath())) {
+        qWarning() << "Failed to create data directory" << dataLocation.absolutePath();
+    }
+    m_indexPath = dataLocation.absolutePath() % QLatin1String("/messagesIndex");
 }
 
 MessagesIndex::~MessagesIndex()

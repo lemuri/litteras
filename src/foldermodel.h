@@ -11,6 +11,9 @@ public:
         RoleFolderId = Qt::UserRole,
         RoleFolderParentId,
         RoleChangeKey,
+        RoleDepth,
+        RoleHasChildren,
+        RoleExpanded,
         RoleDisplayName
     };
     explicit FolderModel(QObject *parent = 0);
@@ -28,9 +31,13 @@ public:
 
     virtual QHash<int,QByteArray> roleNames() const;
 
+public slots:
+    void toggleChildrenExpand(int row);
+
 private slots:
     void insertingRows(const QModelIndex &parent, int first, int last);
     void insertedRows(const QModelIndex &parent, int first, int last);
+    void slotDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
 
 private:
     void addModel(QAbstractItemModel *model);

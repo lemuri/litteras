@@ -35,9 +35,12 @@ public:
         RoleFolderId = Qt::UserRole,
         RoleFolderParentId,
         RoleChangeKey,
+        RoleDepth,
+        RoleHasChildren,
+        RoleExpanded,
         RoleDisplayName
     };
-    explicit EwsFolderModel(EwsEngine *parent = 0);
+    explicit EwsFolderModel(const QString &location, EwsEngine *parent = 0);
 
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
     QStringList folderIds(const QModelIndex &parent = QModelIndex()) const;
@@ -55,7 +58,7 @@ private:
     void addFolder(const Ews::Folder &folder);
     void deleteFolder(const QString &folderId);
     void addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title);
-    QStandardItem *findItem(const QString &id, const QModelIndex &parent = QModelIndex());
+    QStandardItem *findItem(const QString &id);
 
     QSettings *m_settings;
     EwsEngine *m_parent;
