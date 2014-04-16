@@ -12,9 +12,11 @@ public:
         RoleFolderParentId,
         RoleChangeKey,
         RoleDepth,
-        RoleHasChildren,
+        RoleChildrenCount,
         RoleExpanded,
-        RoleDisplayName
+        RoleIsVisible,
+        RoleDisplayName,
+        RoleHeaderSection
     };
     explicit FolderModel(QObject *parent = 0);
 
@@ -37,9 +39,12 @@ public slots:
 private slots:
     void insertingRows(const QModelIndex &parent, int first, int last);
     void insertedRows(const QModelIndex &parent, int first, int last);
+    void removingRows(const QModelIndex &parent, int first, int last);
+    void removedRows(const QModelIndex &parent, int first, int last);
     void slotDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles);
 
 private:
+    QModelIndex indexForModelIndex(const QModelIndex &modelIndex);
     void addModel(QAbstractItemModel *model);
     QAbstractItemModel *modelForRow(int row) const;
     int offsetForModel(QAbstractItemModel *model) const;

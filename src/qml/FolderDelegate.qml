@@ -5,24 +5,24 @@ import QtQuick.Layouts 1.1
 Item {
     width: ListView.view.width
     height: visible ? row.height + 4 : 0
-    visible: model.roleExpanded
+    visible: roleIsVisible
 
     RowLayout {
         id: row
         anchors.verticalCenter: parent.verticalCenter
         anchors.right: parent.right
         anchors.left: parent.left
-        anchors.leftMargin: model.roleDepth * folderIcon.width
+        anchors.leftMargin: roleDepth * folderIcon.width
 
         Image {
             Layout.maximumWidth: height
             id: icon
-            visible: model.roleHasChildren
+            visible: model.roleChildrenCount
             height: label.height / 1.5
             width: height
             sourceSize.height: height
             sourceSize.width: height
-            source: "image://icon/arrow-right"
+            source: roleExpanded ? "image://icon/arrow-down" : "image://icon/arrow-right"
             MouseArea {
                 anchors.fill: parent
                 onClicked: folderModel.toggleChildrenExpand(index)
@@ -54,7 +54,7 @@ Item {
             id: label
             height: contentHeight
             elide: Text.ElideRight
-            text: model.roleDisplayName
+            text: roleDisplayName
             MouseArea {
                 anchors.fill: parent
                 onClicked: {

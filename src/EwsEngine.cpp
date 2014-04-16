@@ -51,7 +51,11 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
     if (!dataLocation.exists() && !dataLocation.mkpath(dataLocation.absolutePath())) {
         qWarning() << "Failed to create data directory" << dataLocation.absolutePath();
     }
+
+    QString accountName = settings.value("EmailAddress").toString();
+
     m_folderModel = new EwsFolderModel(dataLocation.absolutePath(), this);
+    m_folderModel->setProperty("HEADER", accountName);
 //    connect(m_folderModel, SIGNAL(syncItems(QString)),
 //            SLOT(syncItems(QString)));
 
@@ -136,12 +140,12 @@ void EwsEngine::checkDNSFinished()
     qDebug() << Q_FUNC_INFO << dns << dns->name() << dns->error() << dns->errorString();
     if (dns->property("host").toString() == m_internalUri.host()) {
         if (dns->error()) {
-            connection()->setUri(m_externalUri);
+            m_connection->setUri(m_externalUri);
             update();
         }
     } else {
         if (dns->error()) {
-            connection()->setUri(m_internalUri);
+            m_connection->setUri(m_internalUri);
             update();
         }
     }

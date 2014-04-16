@@ -11,9 +11,11 @@ FolderModel::FolderModel(QObject *parent) :
     m_roleNames[RoleFolderParentId] = "roleFolderParentId";
     m_roleNames[RoleChangeKey]      = "roleChangeKey";
     m_roleNames[RoleDepth]          = "roleDepth";
-    m_roleNames[RoleHasChildren]    = "roleHasChildren";
+    m_roleNames[RoleChildrenCount]  = "roleChildrenCount";
     m_roleNames[RoleExpanded]       = "roleExpanded";
+    m_roleNames[RoleIsVisible]      = "roleIsVisible";
     m_roleNames[RoleDisplayName]    = "roleDisplayName";
+    m_roleNames[RoleHeaderSection]  = "roleHeaderSection";
 
     QList<QAbstractItemModel*> models = AccountsEngine::instance()->engineFolderModels();
     foreach (QAbstractItemModel *model, models) {
@@ -67,17 +69,21 @@ bool FolderModel::hasChildren(const QModelIndex &parent) const
 
 QVariant FolderModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.parent().isValid()) {
-        QAbstractItemModel *model = modelForRow(index.row());
+    QAbstractItemModel *model = modelForRow(index.row());
+    if (role == RoleHeaderSection) {
+        return model->property("HEADER");
+    }
+//    if (!index.parent().isValid()) {
+
         int offset = offsetForModel(model);
 
         QModelIndex modelIndex = model->index(index.row() - offset, 0);
         return model->data(modelIndex, role);
-    } else {
-        qDebug() << "_index_" << index.row() << index.parent();
-        const QAbstractItemModel *model = index.model();
-        return model->data(index, role);
-    }
+//    } else {
+//        qDebug() << "_index_" << index.row() << index.parent();
+//        const QAbstractItemModel *model = index.model();
+//        return model->data(index, role);
+//    }
 }
 
 QHash<int, QByteArray> FolderModel::roleNames() const
@@ -109,15 +115,34 @@ void FolderModel::insertedRows(const QModelIndex &parent, int first, int last)
     endInsertRows();
 }
 
+void FolderModel::removingRows(const QModelIndex &parent, int first, int last)
+{
+    Q_UNUSED(parent)
+    // The model is removing rows
+    int offset = offsetForModel(qobject_cast<QAbstractItemModel*>(sender()));
+    beginRemoveRows(QModelIndex(),
+                    offset + first,
+                    offset + last);
+}
+
+void FolderModel::removedRows(const QModelIndex &parent, int first, int last)
+{
+    endRemoveRows();
+}
+
 void FolderModel::slotDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
 {
-    QAbstractItemModel *model = qobject_cast<QAbstractListModel*>(sender());
-    int offset = offsetForModel(model);
-    offset = 0;
-    qDebug() << Q_FUNC_INFO << offset;
-    emit dataChanged(createIndex(topLeft.row() + offset, 0, model),
-                     createIndex(bottomRight.row() + offset, 0, model),
+    emit dataChanged(indexForModelIndex(topLeft),
+                     indexForModelIndex(bottomRight),
                      roles);
+}
+
+QModelIndex FolderModel::indexForModelIndex(const QModelIndex &modelIndex)
+{
+    QAbstractItemModel *model = const_cast<QAbstractItemModel*>(modelIndex.model());
+    return createIndex(modelIndex.row() + m_models.indexOf(model),
+                       0,
+                       model);
 }
 
 void FolderModel::addModel(QAbstractItemModel *model)
@@ -130,12 +155,16 @@ void FolderModel::addModel(QAbstractItemModel *model)
                         model->rowCount());
     }
     m_models << model;
-    connect(model, SIGNAL(modelAboutToBeReset()),
-            this, SIGNAL(modelAboutToBeReset()));
-    connect(model, SIGNAL(rowsAboutToBeInserted(QModelIndex,int,int)),
-            this, SLOT(insertingRows(QModelIndex,int,int)));
-    connect(model, SIGNAL(rowsInserted(QModelIndex,int,int)),
-            this, SLOT(insertedRows(QModelIndex,int,int)));
+    connect(model, &QAbstractItemModel::modelAboutToBeReset,
+            this, &FolderModel::modelAboutToBeReset);
+    connect(model, &QAbstractItemModel::rowsAboutToBeInserted,
+            this, &FolderModel::insertingRows);
+    connect(model, &QAbstractItemModel::rowsInserted,
+            this, &FolderModel::insertedRows);
+    connect(model, &QAbstractItemModel::rowsAboutToBeRemoved,
+            this, &FolderModel::removingRows);
+    connect(model, &QAbstractItemModel::rowsRemoved,
+            this, &FolderModel::removedRows);
     connect(model, &QAbstractItemModel::dataChanged,
             this, &FolderModel::slotDataChanged);
 

@@ -97,6 +97,19 @@ ApplicationWindow {
                     }
                     delegate: FolderDelegate {
                     }
+
+                    section.property: "roleHeaderSection"
+                    section.delegate: Text {
+                        anchors.left: parent.left
+                        anchors.right: parent.right
+                        anchors.margins: 4
+                        height: contentHeight + 8
+                        verticalAlignment: Text.AlignVCenter
+                        opacity: 0.4
+                        font.bold: true
+                        elide: Text.ElideRight
+                        text: section
+                    }
                 }
             }
         }

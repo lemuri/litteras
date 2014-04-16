@@ -31,15 +31,6 @@ class EwsFolderModel : public QStandardItemModel
 {
     Q_OBJECT
 public:
-    enum FolderRoles {
-        RoleFolderId = Qt::UserRole,
-        RoleFolderParentId,
-        RoleChangeKey,
-        RoleDepth,
-        RoleHasChildren,
-        RoleExpanded,
-        RoleDisplayName
-    };
     explicit EwsFolderModel(const QString &location, EwsEngine *parent = 0);
 
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
@@ -57,15 +48,14 @@ private slots:
 private:
     void addFolder(const Ews::Folder &folder);
     void deleteFolder(const QString &folderId);
-    void addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title);
-    QStandardItem *findItem(const QString &id);
+    QStandardItem *addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title);
+    QStandardItem *findItem(const QString &id, bool init = false);
 
     QSettings *m_settings;
     EwsEngine *m_parent;
     QTimer *m_updateTimer;
     QString m_uuid;
     QString m_configName;
-    QHash<int, QByteArray> m_roleNames;
 };
 
 #endif // EWSFOLDERMODEL_H

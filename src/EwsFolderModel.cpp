@@ -19,6 +19,7 @@
 
 #include "EwsFolderModel.h"
 #include "EwsEngine.h"
+#include "foldermodel.h"
 
 #include <EwsQt5/syncfolderhierarchyreply.h>
 #include <EwsQt5/connection.h>
@@ -26,6 +27,7 @@
 
 #include <QStringBuilder>
 #include <QStandardPaths>
+#include <QRegularExpression>
 
 #include <QDebug>
 
@@ -41,18 +43,10 @@ EwsFolderModel::EwsFolderModel(const QString &location, EwsEngine *parent) :
     m_configName = location % QLatin1String("/") % m_uuid;
     m_settings = new QSettings(m_configName, QSettings::IniFormat);
 
-    m_roleNames[RoleFolderId]       = "roleFolderId";
-    m_roleNames[RoleFolderParentId] = "roleFolderParentId";
-    m_roleNames[RoleChangeKey]      = "roleChangeKey";
-    m_roleNames[RoleDisplayName]    = "roleDisplayName";
-    m_roleNames[RoleHasChildren]    = "roleHasChildren";
-    m_roleNames[RoleExpanded]       = "roleExpanded";
-    m_roleNames[RoleDisplayName]    = "roleDisplayName";
-
     // Update the list in one minute
     connect(m_updateTimer, SIGNAL(timeout()), SLOT(sync()));
-    m_updateTimer->setInterval(10000);
-    m_updateTimer->setSingleShot(true);
+    m_updateTimer->setInterval(5000);
+    m_updateTimer->setSingleShot(false);
     m_updateTimer->start();
 
     init();
@@ -63,23 +57,28 @@ bool EwsFolderModel::setData(const QModelIndex &index, const QVariant &value, in
 //    qDebug() << Q_FUNC_INFO << index << value << role;
     if (role == Qt::EditRole) {
 //        Ews::Folder folder(m_parent->connection(),
-//                         index.data(RoleFolderId).toString(),
-//                         index.data(RoleChangeKey).toString());
+//                         index.data(FolderModel::RoleFolderId).toString(),
+//                         index.data(FolderModel::RoleChangeKey).toString());
 //        folder.setDisplayName(value.toString());
 //        Ews::Reply *reply = folder.update();
 //        connect(reply, SIGNAL(finished()), SLOT(updateFolderFinished()));
-    } else if (role == RoleExpanded) {
-        int depth = index.data(RoleDepth).toInt();
-        bool expanded = value.toBool();
+    } else if (role == FolderModel::RoleExpanded) {
+        // The parent item is now expanded
+        QStandardItem *parentItem = itemFromIndex(index);
+        parentItem->setData(value, FolderModel::RoleExpanded);
+
+        // Set the visibility of the child items
+        int depth = index.data(FolderModel::RoleDepth).toInt();
+        bool parentExpanded = value.toBool();
         for (int i = index.row() + 1; i < rowCount(); ++i) {
 
             QStandardItem *stdItem = item(i);
-            qDebug() << Q_FUNC_INFO << i << expanded << stdItem->data(RoleDepth).toInt() << depth;
-            if (stdItem->data(RoleDepth).toInt() <= depth) {
+            qDebug() << Q_FUNC_INFO << i << parentExpanded << stdItem->data(FolderModel::RoleDepth).toInt() << depth;
+            if (stdItem->data(FolderModel::RoleDepth).toInt() <= depth) {
                 break;
             }
-            qDebug() << Q_FUNC_INFO << stdItem->data(RoleDisplayName).toString() << !expanded;
-            stdItem->setData(!expanded, RoleExpanded);
+            qDebug() << Q_FUNC_INFO << stdItem->data(FolderModel::RoleDisplayName).toString() << parentExpanded;
+            stdItem->setData(parentExpanded, FolderModel::RoleIsVisible);
         }
     }
 
@@ -95,7 +94,7 @@ QStringList EwsFolderModel::folderIds(const QModelIndex &parent) const
             continue;
         }
 
-        ret << folderIndex.data(RoleFolderId).toString();
+        ret << folderIndex.data(FolderModel::RoleFolderId).toString();
 
         ret << folderIds(folderIndex);
     }
@@ -105,16 +104,23 @@ QStringList EwsFolderModel::folderIds(const QModelIndex &parent) const
 
 void EwsFolderModel::init()
 {
-    int size = m_settings->beginReadArray("Folders");
-    for (int i = 0; i < size; ++i) {
-        m_settings->setArrayIndex(i);
+    foreach (const QString &group, m_settings->childGroups()) {
+        if (!group.startsWith(QLatin1String("folder_"))) {
+            continue;
+        }
 
-        addFolderItem(m_settings->value("FolderId").toString(),
-                      m_settings->value("ParentId").toString(),
-                      m_settings->value("ChangeKey").toString(),
-                      m_settings->value("DisplayName").toString());
+        m_settings->beginGroup(group);
+        QString folderId = m_settings->value("FolderId").toString();
+        QString parentId = m_settings->value("ParentId").toString();
+        QString changeKey = m_settings->value("ChangeKey").toString();
+        QString displayName = m_settings->value("DisplayName").toString();
+        m_settings->endGroup();
+
+        addFolderItem(folderId,
+                      parentId,
+                      changeKey,
+                      displayName);
     }
-    m_settings->endArray();
 
     sync();
 }
@@ -134,13 +140,13 @@ void EwsFolderModel::sync()
                                                                                     QString(),
                                                                                     lastSyncState);
     qDebug() << Q_FUNC_INFO << reply;
-    connect(reply, SIGNAL(finished()), SLOT(syncFolderHierarchyFinished()));
+    connect(reply, &SyncFolderHierarchyReply::finished,
+            this, &EwsFolderModel::syncFolderHierarchyFinished);
 }
 
 void EwsFolderModel::syncFolderHierarchyFinished()
 {
     beginResetModel();
-
 
     Ews::SyncFolderHierarchyReply *response = qobject_cast<Ews::SyncFolderHierarchyReply*>(sender());
 //    qDebug() << Q_FUNC_INFO << response->messageText() << response->errorMessage();
@@ -149,6 +155,7 @@ void EwsFolderModel::syncFolderHierarchyFinished()
         return;
     }
 
+    qDebug() << Q_FUNC_INFO << response->createFolders().size() << response->updateFolders().size() << response->deleteFolders().size();
     foreach (const Folder &folder, response->createFolders()) {
         addFolder(folder);
         emit syncItems(folder.id());
@@ -185,105 +192,128 @@ void EwsFolderModel::updateFolderFinished()
 
 void EwsFolderModel::addFolder(const Ews::Folder &folder)
 {
-    qDebug() << Q_FUNC_INFO << folder.displayName() << folder.id();
+    QString normalized = folder.id().replace(QRegularExpression("[\\W]"), QLatin1String("_"));
+
+    m_settings->beginGroup(QLatin1String("folder_") % normalized);
+    m_settings->setValue("FolderId", folder.id());
+    m_settings->setValue("ChangeKey", folder.changeKey());
+    m_settings->setValue("ParentId", folder.parentId());
+    m_settings->setValue("DisplayName", folder.displayName());
+    m_settings->endGroup();
+
     QStandardItem *stdItem = findItem(folder.id());
-    if (!stdItem) {
-        int size = m_settings->beginReadArray("Folders");
-        m_settings->endArray();
-
-        m_settings->beginWriteArray("Folders");
-        m_settings->setArrayIndex(size);
-
-        m_settings->setValue("FolderId", folder.id());
-        m_settings->setValue("ChangeKey", folder.changeKey());
-        m_settings->setValue("ParentId", folder.parentId());
-        m_settings->setValue("DisplayName", folder.displayName());
-
+    if (stdItem && stdItem->data(FolderModel::RoleFolderParentId).toString() != folder.parentId()) {
+        deleteFolder(folder.id());
+        addFolder(folder);
+    } else {
         addFolderItem(folder.id(), folder.parentId(), folder.changeKey(), folder.displayName());
-
-        m_settings->endArray();
-
-        return;
     }
-
-    if (stdItem->data(RoleChangeKey).toString() != folder.changeKey()) {
-        // todo update
-    }
-
-
-//    settings.beginWriteArray("Folders");
-
-//    QString storedChangeKey = settings.value("ChangeKey").toString();
-//    if (storedChangeKey.isEmpty() || storedChangeKey != folder.changeKey()) {
-//        settings.setValue("ChangeKey", folder.changeKey());
-//        settings.setValue("ParentId", folder.parentId());
-//        settings.setValue("DisplayName", folder.displayName());
-
-//        addFolderItem(folder.id(), folder.parentId(), folder.changeKey(), folder.displayName());
-//    }
-//    settings.endGroup();// Folder.id
-
-//    settings.endGroup();// Folders
 }
 
 void EwsFolderModel::deleteFolder(const QString &folderId)
 {
-    m_settings->beginGroup("Folders");
-    m_settings->remove(folderId);
+    QString normalized = folderId;
+    normalized.replace(QRegularExpression("[\\W]"), QLatin1String("_"));
+    m_settings->beginGroup(QLatin1String("folder_") % normalized);
+    m_settings->remove("");
+    m_settings->endGroup();
 
     QStandardItem *stdItem = findItem(folderId);
     if (stdItem) {
-        qDebug() << stdItem->row() << stdItem->parent()->index();
-        removeRow(stdItem->row(), stdItem->parent()->index());
+        if (stdItem->data(FolderModel::RoleDepth).toInt()) {
+            QStandardItem *parentItem = findItem(stdItem->data(FolderModel::RoleFolderParentId).toString());
+            if (parentItem) {
+                // If this is the last item colapse the parent
+                int childrenCount = parentItem->data(FolderModel::RoleChildrenCount).toInt();
+                parentItem->setData(--childrenCount, FolderModel::RoleChildrenCount);
+                if (childrenCount == 0 && parentItem->data(FolderModel::RoleExpanded).toBool()) {
+                    parentItem->setData(false, FolderModel::RoleExpanded);
+                }
+            }
+        }
+        removeRow(stdItem->row());
     }
 }
 
-void EwsFolderModel::addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title)
+QStandardItem *EwsFolderModel::addFolderItem(const QString &id, const QString &parentId, const QString &changeKey, const QString &title)
 {
     QStandardItem *stdItem = findItem(id);
     if (stdItem) {
-        if (stdItem->data(RoleFolderParentId).toString() == parentId) {
-            stdItem->setData(title, RoleDisplayName);
-            stdItem->setData(changeKey, RoleChangeKey);
-            return;
-        }
-
-        if (stdItem->parent()) {
-            removeRow(stdItem->row(), stdItem->parent()->index());
-        } else {
-            removeRow(stdItem->row());
-        }
+        // Update our item
+        stdItem->setData(title, FolderModel::RoleDisplayName);
+        stdItem->setData(changeKey, FolderModel::RoleChangeKey);
+        return stdItem;
     }
 
     stdItem = new QStandardItem;
-    stdItem->setData(title, RoleDisplayName);
-    stdItem->setData(id, RoleFolderId);
-    stdItem->setData(parentId, RoleFolderParentId);
-    stdItem->setData(changeKey, RoleChangeKey);
-    stdItem->setData(0, RoleHasChildren);
+    stdItem->setData(title, FolderModel::RoleDisplayName);
+    stdItem->setData(id, FolderModel::RoleFolderId);
+    stdItem->setData(parentId, FolderModel::RoleFolderParentId);
+    stdItem->setData(changeKey, FolderModel::RoleChangeKey);
+    stdItem->setData(0, FolderModel::RoleChildrenCount);
+    stdItem->setData(false, FolderModel::RoleExpanded);
 
-    QStandardItem *parentItem = findItem(parentId);
+    int startRow = 0;
+    int depth = 0;
+    QStandardItem *parentItem = findItem(parentId, true);
     if (parentItem) {
-        int children = parentItem->data(RoleHasChildren).toInt();
-        parentItem->setData(++children, RoleHasChildren);
+        int children = parentItem->data(FolderModel::RoleChildrenCount).toInt();
+        parentItem->setData(++children, FolderModel::RoleChildrenCount);
 
-        int depth = parentItem->data(RoleDepth).toInt();
-        stdItem->setData(++depth, RoleDepth);
+        depth = parentItem->data(FolderModel::RoleDepth).toInt() + 1;
 
-        stdItem->setData(false, RoleExpanded);
+        stdItem->setData(false, FolderModel::RoleIsVisible);
+        startRow = parentItem->row();
     } else {
-        stdItem->setData(0, RoleDepth);
-        stdItem->setData(true, RoleExpanded);
+        stdItem->setData(true, FolderModel::RoleIsVisible);
+    }
+    stdItem->setData(depth, FolderModel::RoleDepth);
+
+    for (int i = startRow; i < rowCount(); ++i) {
+        QStandardItem *loopItem = item(i, 0);
+        if (loopItem->data(FolderModel::RoleDepth).toInt() == depth) {
+            QString displayName = loopItem->data(FolderModel::RoleDisplayName).toString();
+            if (displayName.localeAwareCompare(title) > 0) {
+                insertRow(i, stdItem);
+                return stdItem;
+            }
+        }
     }
     appendRow(stdItem);
+
+    return stdItem;
 }
 
-QStandardItem *EwsFolderModel::findItem(const QString &id)
+QStandardItem *EwsFolderModel::findItem(const QString &id, bool init)
 {
     for (int i = 0; i < rowCount(); ++i) {
         QStandardItem *stdItem = item(i, 0);
-        if (stdItem->data(RoleFolderId).toString() == id) {
+        if (stdItem->data(FolderModel::RoleFolderId).toString() == id) {
             return stdItem;
+        }
+    }
+
+    if (!init) {
+        return 0;
+    }
+
+    // A last resort for when we are in init mode
+    foreach (const QString &group, m_settings->childGroups()) {
+        if (!group.startsWith(QLatin1String("folder_"))) {
+            continue;
+        }
+
+        m_settings->beginGroup(group);
+        QString folderId = m_settings->value("FolderId").toString();
+        QString parentId = m_settings->value("ParentId").toString();
+        QString changeKey = m_settings->value("ChangeKey").toString();
+        QString displayName = m_settings->value("DisplayName").toString();
+        m_settings->endGroup();
+        if (folderId == id) {
+            return addFolderItem(folderId,
+                                 parentId,
+                                 changeKey,
+                                 displayName);
         }
     }
 
