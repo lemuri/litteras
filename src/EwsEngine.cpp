@@ -52,10 +52,13 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
         qWarning() << "Failed to create data directory" << dataLocation.absolutePath();
     }
 
-    QString accountName = settings.value("EmailAddress").toString();
+    QString accountName = settings.value("Description").toString();
+    if (accountName.isEmpty()) {
+        accountName = settings.value("EmailAddress").toString().section(QLatin1Char('@'), 1, 1).section(QLatin1Char('.'), 0, 0);
+    }
 
     m_folderModel = new EwsFolderModel(dataLocation.absolutePath(), this);
-    m_folderModel->setProperty("HEADER", accountName);
+    m_folderModel->setProperty("HEADER", accountName.toUpper());
 //    connect(m_folderModel, SIGNAL(syncItems(QString)),
 //            SLOT(syncItems(QString)));
 

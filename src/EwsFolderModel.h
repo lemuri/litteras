@@ -43,7 +43,7 @@ private slots:
     void init();
     void sync();
     void syncFolderHierarchyFinished();
-    void updateFolderFinished();
+    void getFolderFinished();
 
 private:
     void addFolder(const Ews::Folder &folder);

@@ -31,6 +31,7 @@ class AccountNew : public QObject
     Q_PROPERTY(QString emailAddress MEMBER m_emailAddress WRITE setEmailAddress NOTIFY emailAddressChanged)
     Q_PROPERTY(QString password MEMBER m_password NOTIFY passwordChanged)
     Q_PROPERTY(QString fullName MEMBER m_fullName NOTIFY fullNameChanged)
+    Q_PROPERTY(QString description MEMBER m_description NOTIFY descriptionChanged)
     Q_PROPERTY(bool processing MEMBER m_processing NOTIFY processingChanged)
     Q_PROPERTY(bool valid MEMBER m_valid NOTIFY validChanged)
 public:
@@ -47,6 +48,7 @@ signals:
     void emailAddressChanged();
     void passwordChanged();
     void fullNameChanged();
+    void descriptionChanged();
     void processingChanged();
     void validChanged();
     void authenticationError(const QString &server);
@@ -64,6 +66,7 @@ private:
     QString m_emailAddress;
     QString m_password;
     QString m_fullName;
+    QString m_description;
     bool m_processing = false;
     bool m_valid = false;
     bool m_usernameIsModified = false;

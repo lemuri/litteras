@@ -86,7 +86,7 @@ ApplicationWindow {
         Rectangle {
             width: 200
             Layout.maximumWidth: 400
-            color: "gray"
+            color: "#F5F5F5"
 
             ScrollView {
                 anchors.fill: parent

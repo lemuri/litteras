@@ -22,6 +22,7 @@
 #include "foldermodel.h"
 
 #include <EwsQt5/syncfolderhierarchyreply.h>
+#include <EwsQt5/getfolderreply.h>
 #include <EwsQt5/connection.h>
 #include <EwsQt5/reply.h>
 
@@ -71,13 +72,10 @@ bool EwsFolderModel::setData(const QModelIndex &index, const QVariant &value, in
         int depth = index.data(FolderModel::RoleDepth).toInt();
         bool parentExpanded = value.toBool();
         for (int i = index.row() + 1; i < rowCount(); ++i) {
-
             QStandardItem *stdItem = item(i);
-            qDebug() << Q_FUNC_INFO << i << parentExpanded << stdItem->data(FolderModel::RoleDepth).toInt() << depth;
             if (stdItem->data(FolderModel::RoleDepth).toInt() <= depth) {
                 break;
             }
-            qDebug() << Q_FUNC_INFO << stdItem->data(FolderModel::RoleDisplayName).toString() << parentExpanded;
             stdItem->setData(parentExpanded, FolderModel::RoleIsVisible);
         }
     }
@@ -114,12 +112,15 @@ void EwsFolderModel::init()
         QString parentId = m_settings->value("ParentId").toString();
         QString changeKey = m_settings->value("ChangeKey").toString();
         QString displayName = m_settings->value("DisplayName").toString();
+        QString folderClass = m_settings->value("FolderClass").toString();
         m_settings->endGroup();
 
-        addFolderItem(folderId,
-                      parentId,
-                      changeKey,
-                      displayName);
+        if (folderClass == QLatin1String("IPF.Note")) {
+            addFolderItem(folderId,
+                          parentId,
+                          changeKey,
+                          displayName);
+        }
     }
 
     sync();
@@ -128,18 +129,14 @@ void EwsFolderModel::init()
 void EwsFolderModel::sync()
 {
     qDebug() << Q_FUNC_INFO << m_configName;
-    qDebug() << Q_FUNC_INFO << m_parent;
-    qDebug() << Q_FUNC_INFO << m_parent->connection();
-    qDebug() << Q_FUNC_INFO << m_parent->connection()->serverVersion();
 
     m_settings->beginGroup("SyncState");
     QString lastSyncState = m_settings->value("SyncState").toString();
     m_settings->endGroup();
 
-    Ews::SyncFolderHierarchyReply *reply = m_parent->connection()->syncFolderHierarch(Ews::Folder::AllProperties,
-                                                                                    QString(),
-                                                                                    lastSyncState);
-    qDebug() << Q_FUNC_INFO << reply;
+    SyncFolderHierarchyReply *reply = m_parent->connection()->syncFolderHierarch(Folder::IdOnly,
+                                                                                 QString(),
+                                                                                 lastSyncState);
     connect(reply, &SyncFolderHierarchyReply::finished,
             this, &EwsFolderModel::syncFolderHierarchyFinished);
 }
@@ -148,7 +145,7 @@ void EwsFolderModel::syncFolderHierarchyFinished()
 {
     beginResetModel();
 
-    Ews::SyncFolderHierarchyReply *response = qobject_cast<Ews::SyncFolderHierarchyReply*>(sender());
+    SyncFolderHierarchyReply *response = qobject_cast<SyncFolderHierarchyReply*>(sender());
 //    qDebug() << Q_FUNC_INFO << response->messageText() << response->errorMessage();
     if (response->error()) {
         qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
@@ -156,12 +153,15 @@ void EwsFolderModel::syncFolderHierarchyFinished()
     }
 
     qDebug() << Q_FUNC_INFO << response->createFolders().size() << response->updateFolders().size() << response->deleteFolders().size();
+    QList<Folder> folders;
     foreach (const Folder &folder, response->createFolders()) {
         addFolder(folder);
+        folders << folder;
         emit syncItems(folder.id());
     }
 
     foreach (const Folder &folder, response->updateFolders()) {
+        folders << folder;
         addFolder(folder);
     }
 
@@ -176,22 +176,40 @@ void EwsFolderModel::syncFolderHierarchyFinished()
     }
     m_settings->endGroup();
 
+    if (!folders.isEmpty()) {
+        // TODO add wellknownfolders
+        GetFolderReply *reply = m_parent->connection()->getFolders(folders, Ews::Folder::AllProperties);
+        connect(reply, &GetFolderReply::finished,
+                this, &EwsFolderModel::getFolderFinished);
+    }
+
     endResetModel();
 }
 
-void EwsFolderModel::updateFolderFinished()
+void EwsFolderModel::getFolderFinished()
 {
-//    EwsReply *response = qobject_cast<EwsReply*>(sender());
-//    if (response->error()) {
-//        kDebug() << "updateFolderFinished failed" << response->errorMessage();
-//        response->deleteLater();
-//    } else {
-//        sync();
-    //    }
+    GetFolderReply *response = qobject_cast<GetFolderReply*>(sender());
+//    qDebug() << Q_FUNC_INFO << response->messageText() << response->errorMessage();
+    if (response->error()) {
+        qDebug() << Q_FUNC_INFO << "SyncFolderHierarchyReply failed" << response->errorMessage();
+        return;
+    }
+
+    foreach (const Folder &folder, response->folders()) {
+        if (folder.folderClass() == QLatin1String("IPF.Note")) {
+            addFolder(folder);
+        }
+    }
 }
 
 void EwsFolderModel::addFolder(const Ews::Folder &folder)
 {
+    QStandardItem *stdItem = findItem(folder.id());
+    qDebug() << stdItem << folder.displayName() << folder.folderClass();
+    if (stdItem && stdItem->data(FolderModel::RoleFolderParentId).toString() != folder.parentId()) {
+        deleteFolder(folder.id());
+    }
+
     QString normalized = folder.id().replace(QRegularExpression("[\\W]"), QLatin1String("_"));
 
     m_settings->beginGroup(QLatin1String("folder_") % normalized);
@@ -199,14 +217,10 @@ void EwsFolderModel::addFolder(const Ews::Folder &folder)
     m_settings->setValue("ChangeKey", folder.changeKey());
     m_settings->setValue("ParentId", folder.parentId());
     m_settings->setValue("DisplayName", folder.displayName());
+    m_settings->setValue("FolderClass", folder.folderClass());
     m_settings->endGroup();
 
-    QStandardItem *stdItem = findItem(folder.id());
-    qDebug() << stdItem << folder.displayName();
-    if (stdItem && stdItem->data(FolderModel::RoleFolderParentId).toString() != folder.parentId()) {
-        deleteFolder(folder.id());
-        addFolder(folder);
-    } else {
+    if (!folder.displayName().isNull()) {
         addFolderItem(folder.id(), folder.parentId(), folder.changeKey(), folder.displayName());
     }
 }
@@ -256,18 +270,17 @@ QStandardItem *EwsFolderModel::addFolderItem(const QString &id, const QString &p
 
     int startRow = 0;
     int depth = 0;
+    bool visible = true;
     QStandardItem *parentItem = findItem(parentId, true);
     if (parentItem) {
+        visible = parentItem->data(FolderModel::RoleExpanded).toBool();
+        depth = parentItem->data(FolderModel::RoleDepth).toInt() + 1;
         int children = parentItem->data(FolderModel::RoleChildrenCount).toInt();
         parentItem->setData(++children, FolderModel::RoleChildrenCount);
 
-        depth = parentItem->data(FolderModel::RoleDepth).toInt() + 1;
-
-        stdItem->setData(false, FolderModel::RoleIsVisible);
         startRow = parentItem->row() + 1;
-    } else {
-        stdItem->setData(true, FolderModel::RoleIsVisible);
     }
+    stdItem->setData(visible, FolderModel::RoleIsVisible);
     stdItem->setData(depth, FolderModel::RoleDepth);
 
     for (int i = startRow; i < rowCount(); ++i) {

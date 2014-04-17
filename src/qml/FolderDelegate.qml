@@ -15,11 +15,10 @@ Item {
         anchors.leftMargin: roleDepth * folderIcon.width
 
         Image {
-            Layout.maximumWidth: height
             id: icon
-            visible: model.roleChildrenCount
-            height: label.height / 1.5
-            width: height
+            visible: roleChildrenCount
+            height: width
+            width: label.height
             sourceSize.height: height
             sourceSize.width: height
             source: roleExpanded ? "image://icon/arrow-down" : "image://icon/arrow-right"
@@ -29,12 +28,11 @@ Item {
             }
         }
         Item {
-            width: icon.width
+            width: label.height
             visible: !icon.visible
         }
 
         Image {
-            Layout.maximumWidth: height
             id: folderIcon
             height: label.height
             width: height

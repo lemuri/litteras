@@ -75,6 +75,7 @@ void AccountNew::setEmailAddress(const QString &emailAddress)
     }
 
     m_emailAddress = emailAddress;
+    m_description = m_serverAddress.section(QLatin1Char('.'), 0, 0);
     emit emailAddressChanged();
 }
 
@@ -109,6 +110,8 @@ void AccountNew::save()
                 ++it;
             }
             settings.setValue("Fullname", m_fullName);
+            settings.setValue("Description", m_description);
+            settings.setValue("Kind", "EWS");
             settings.endGroup();
             ok = true;
             break;
