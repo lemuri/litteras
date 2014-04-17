@@ -41,11 +41,13 @@ public:
     Ews::Connection *connection() const;
     QString uuid() const;
 
+public slots:
+    void update();
+
 signals:
     void addMessage(const QString &id, const QString &parentId, const QString &subject, const QString &from, const QDateTime &received, bool read);
 
 private slots:
-    void update();
     void syncItems(const QString &folderId);
     void syncFolderItemsFinished();
 

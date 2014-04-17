@@ -48,13 +48,6 @@ AccountNew::~AccountNew()
 {
 }
 
-void AccountNew::setServerAddress(const QString &serverAddress)
-{
-    m_serverAddress = serverAddress;
-    m_serverAddressIsModified = true;
-    emit serverAddressChanged();
-}
-
 void AccountNew::setUsername(const QString &username)
 {
     m_username = username;
@@ -64,18 +57,18 @@ void AccountNew::setUsername(const QString &username)
 
 void AccountNew::setEmailAddress(const QString &emailAddress)
 {
-    if (!m_usernameIsModified) {
+    if (!m_usernameIsModified || m_hideUsername) {
         m_username = emailAddress.section(QLatin1Char('@'), 0, 0);
         emit usernameChanged();
     }
 
-    if (!m_serverAddressIsModified) {
-        m_serverAddress = emailAddress.section(QLatin1Char('@'), 1, 1);
+    QString serverAddress = emailAddress.section(QLatin1Char('@'), 1, 1);
+    if (m_serverAddress != serverAddress) {
+        m_serverAddress = serverAddress;
         emit serverAddressChanged();
     }
 
     m_emailAddress = emailAddress;
-    m_description = m_serverAddress.section(QLatin1Char('.'), 0, 0);
     emit emailAddressChanged();
 }
 
@@ -88,9 +81,14 @@ void AccountNew::process()
     m_processing = true;
     emit processingChanged();
 
-    AutoDiscover *autodiscover = new AutoDiscover(this);
-    connect(autodiscover, &AutoDiscover::finished, this, &AccountNew::autoDiscoverFinished);
-    autodiscover->autodiscover(m_emailAddress, m_serverAddress, m_username, m_password);
+    if (m_autodiscover) {
+        delete m_autodiscover;
+    }
+
+    m_autodiscover = new AutoDiscover(this);
+    connect(m_autodiscover, &AutoDiscover::finished, this, &AccountNew::autoDiscoverFinished);
+    qDebug() << Q_FUNC_INFO << m_emailAddress << m_serverAddress << m_username;
+    m_autodiscover->autodiscover(m_emailAddress, m_serverAddress, m_username, m_password);
 }
 
 void AccountNew::save()
@@ -122,6 +120,13 @@ void AccountNew::save()
     AccountsEngine::instance()->configFileChanged();
 }
 
+void AccountNew::cancel()
+{
+    if (m_autodiscover) {
+        m_autodiscover->cancel();
+    }
+}
+
 void AccountNew::autoDiscoverFinished()
 {
     AutoDiscover *autodiscover = qobject_cast<AutoDiscover*>(sender());
@@ -140,6 +145,12 @@ void AccountNew::autoDiscoverFinished()
         emit setupServer();
     } else if (autodiscover && autodiscover->authRequired()) {
         emit authenticationError(autodiscover->uri().host());
+
+        m_hideUsername = false;
+        emit hideUsernameChanged();
+    } else if (autodiscover && autodiscover->cancelled()) {
+        m_valid = false;
+        emit validChanged();
     } else if (autodiscover) {
         qWarning() << Q_FUNC_INFO << autodiscover->errorMessage();
         emit setupServer();

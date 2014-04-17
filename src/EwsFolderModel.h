@@ -21,7 +21,6 @@
 #define EWSFOLDERMODEL_H
 
 #include <QStandardItemModel>
-#include <QTimer>
 
 #include <EwsQt5/folder.h>
 
@@ -36,12 +35,13 @@ public:
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
     QStringList folderIds(const QModelIndex &parent = QModelIndex()) const;
 
+    void sync();
+
 signals:
     void syncItems(const QString &folderId);
 
 private slots:
     void init();
-    void sync();
     void syncFolderHierarchyFinished();
     void getFolderFinished();
 
@@ -53,7 +53,6 @@ private:
 
     QSettings *m_settings;
     EwsEngine *m_parent;
-    QTimer *m_updateTimer;
     QString m_uuid;
     QString m_configName;
 };

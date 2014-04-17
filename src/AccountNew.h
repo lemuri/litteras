@@ -23,24 +23,29 @@
 #include <QObject>
 #include <QVariantHash>
 
+namespace Ews {
+class AutoDiscover;
+}
+
 class AccountNew : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString serverAddress MEMBER m_serverAddress WRITE setServerAddress NOTIFY serverAddressChanged)
+    Q_PROPERTY(QString serverAddress MEMBER m_serverAddress NOTIFY serverAddressChanged)
     Q_PROPERTY(QString username MEMBER m_username WRITE setUsername NOTIFY usernameChanged)
     Q_PROPERTY(QString emailAddress MEMBER m_emailAddress WRITE setEmailAddress NOTIFY emailAddressChanged)
     Q_PROPERTY(QString password MEMBER m_password NOTIFY passwordChanged)
     Q_PROPERTY(QString fullName MEMBER m_fullName NOTIFY fullNameChanged)
     Q_PROPERTY(QString description MEMBER m_description NOTIFY descriptionChanged)
+    Q_PROPERTY(bool hideUsername MEMBER m_hideUsername NOTIFY hideUsernameChanged)
     Q_PROPERTY(bool processing MEMBER m_processing NOTIFY processingChanged)
     Q_PROPERTY(bool valid MEMBER m_valid NOTIFY validChanged)
 public:
     explicit AccountNew(QObject *parent = 0);
     ~AccountNew();
 
-    void setServerAddress(const QString &serverAddress);
     void setUsername(const QString &username);
     void setEmailAddress(const QString &emailAddress);
+    void setDescription(const QString &description);
 
 signals:
     void serverAddressChanged();
@@ -49,6 +54,7 @@ signals:
     void passwordChanged();
     void fullNameChanged();
     void descriptionChanged();
+    void hideUsernameChanged();
     void processingChanged();
     void validChanged();
     void authenticationError(const QString &server);
@@ -57,20 +63,22 @@ signals:
 public slots:
     void process();
     void save();
+    void cancel();
 
 private:
     void autoDiscoverFinished();
 
+    Ews::AutoDiscover *m_autodiscover = 0;
     QString m_serverAddress;
     QString m_username;
     QString m_emailAddress;
     QString m_password;
     QString m_fullName;
     QString m_description;
+    bool m_hideUsername = true;
     bool m_processing = false;
     bool m_valid = false;
     bool m_usernameIsModified = false;
-    bool m_serverAddressIsModified = false;
 
     QVariantHash m_settings;
 };

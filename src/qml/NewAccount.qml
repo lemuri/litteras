@@ -13,12 +13,12 @@ Window {
 
     color: sysPalette.window
 
-    property bool hideUsername: true
-    onHideUsernameChanged: {
-        if (hideUsername) {
-            stackView.currentItem
-        }
-    }
+//    property bool hideUsername: true
+//    onHideUsernameChanged: {
+//        if (hideUsername) {
+//            stackView.currentItem
+//        }
+//    }
     onVisibleChanged: {
         if (!visible) {
             destroy();
@@ -26,18 +26,17 @@ Window {
     }
 
     function next() {
-        if (accountNew.valid) {
+        if (stackView.depth === 1) {
+            accountNew.process()
+        } else {
             accountNew.save()
             root.destroy()
-        } else {
-            accountNew.process()
         }
     }
 
     AccountNew {
         id: accountNew
         onAuthenticationError: {
-            hideUsername = false
             username.text = accountNew.username
             username.selectAll()
             username.forceActiveFocus()
@@ -131,19 +130,19 @@ Window {
 
                     Label {
                         Layout.alignment: Qt.AlignRight
-                        visible: !hideUsername
+                        visible: !accountNew.hideUsername
                         text: qsTr("Username")
                     }
                     TextField {
                         Layout.fillWidth: true
                         id: username
-                        visible: !hideUsername
+                        visible: !accountNew.hideUsername
                         onTextChanged: accountNew.username = text
                     }
                     Image {
                         Layout.maximumWidth: height
                         id: icon
-                        visible: !hideUsername
+                        visible: !accountNew.hideUsername
                         height: username.height
                         width: height
                         sourceSize.height: height
@@ -219,7 +218,13 @@ Window {
 
             Button {
                 text: qsTr("Cancel")
-                onClicked: root.destroy()
+                onClicked: {
+                    if (accountNew.processing) {
+                        accountNew.cancel()
+                    } else {
+                        root.destroy()
+                    }
+                }
             }
 
             Item { Layout.fillWidth: true }
@@ -233,7 +238,7 @@ Window {
             Button {
                 id: nextButton
                 isDefault: true
-                text: accountNew.valid ? qsTr("Finish") : qsTr("Continue")
+                text: stackView.depth > 1 ? qsTr("Finish") : qsTr("Continue")
                 onClicked: next()
             }
         }

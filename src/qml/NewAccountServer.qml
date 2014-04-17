@@ -33,7 +33,7 @@ GroupBox {
         TextField {
             Layout.fillWidth: true
             id: description
-            onTextChanged: accountNew.emailAddress = text
+            onTextChanged: accountNew.description = text
         }
         Item { width: fullName.height }
 
@@ -46,7 +46,7 @@ GroupBox {
         TextField {
             Layout.fillWidth: true
             id: serverAddress
-            onTextChanged: accountNew.emailAddress = text
+            onTextChanged: accountNew.serverAddress = text
         }
         Item { width: description.height }
 
@@ -123,6 +123,7 @@ GroupBox {
     }
 
     Component.onCompleted: {
+        description.text = accountNew.description
         username.text = accountNew.username
         password.text = accountNew.password
         serverAddress.text = accountNew.serverAddress

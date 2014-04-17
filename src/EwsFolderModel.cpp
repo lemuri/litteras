@@ -36,19 +36,12 @@ using namespace Ews;
 
 EwsFolderModel::EwsFolderModel(const QString &location, EwsEngine *parent) :
     QStandardItemModel(parent),
-    m_parent(parent),
-    m_updateTimer(new QTimer(this))
+    m_parent(parent)
 {
     m_uuid = parent->uuid();
 
     m_configName = location % QLatin1String("/") % m_uuid;
     m_settings = new QSettings(m_configName, QSettings::IniFormat);
-
-    // Update the list in one minute
-    connect(m_updateTimer, SIGNAL(timeout()), SLOT(sync()));
-    m_updateTimer->setInterval(5000);
-    m_updateTimer->setSingleShot(false);
-    m_updateTimer->start();
 
     init();
 }
@@ -122,8 +115,6 @@ void EwsFolderModel::init()
                           displayName);
         }
     }
-
-    sync();
 }
 
 void EwsFolderModel::sync()
@@ -205,7 +196,6 @@ void EwsFolderModel::getFolderFinished()
 void EwsFolderModel::addFolder(const Ews::Folder &folder)
 {
     QStandardItem *stdItem = findItem(folder.id());
-    qDebug() << stdItem << folder.displayName() << folder.folderClass();
     if (stdItem && stdItem->data(FolderModel::RoleFolderParentId).toString() != folder.parentId()) {
         deleteFolder(folder.id());
     }

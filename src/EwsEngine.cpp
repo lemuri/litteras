@@ -28,6 +28,7 @@
 #include <QStandardPaths>
 #include <QDnsLookup>
 #include <QDir>
+#include <QTimer>
 #include <QDebug>
 
 using namespace Ews;
@@ -66,11 +67,16 @@ EwsEngine::EwsEngine(const QSettings &settings, const QString &uuid, QObject *pa
 
     checkDNS();
 
-    update();
+    // Update the list in one minute
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), SLOT(update()));
+    timer->setInterval(5000);
+    timer->start();
 }
 
 void EwsEngine::update()
 {
+    m_folderModel->sync();
 //    foreach (const QString &folderId, m_folderModel->folderIds()) {
 //        syncItems(folderId);
 //    }
@@ -117,7 +123,7 @@ void EwsEngine::syncFolderItemsFinished()
 
 void EwsEngine::checkDNS()
 {
-    qDebug() << "============= " << m_internalUri << m_externalUri.host();
+    qDebug() << Q_FUNC_INFO << m_internalUri.host() << m_externalUri.host();
     QDnsLookup *dns = new QDnsLookup(this);
     connect(dns, &QDnsLookup::finished,
             this, &EwsEngine::checkDNSFinished);
