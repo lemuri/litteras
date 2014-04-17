@@ -202,6 +202,7 @@ void EwsFolderModel::addFolder(const Ews::Folder &folder)
     m_settings->endGroup();
 
     QStandardItem *stdItem = findItem(folder.id());
+    qDebug() << stdItem << folder.displayName();
     if (stdItem && stdItem->data(FolderModel::RoleFolderParentId).toString() != folder.parentId()) {
         deleteFolder(folder.id());
         addFolder(folder);
@@ -263,7 +264,7 @@ QStandardItem *EwsFolderModel::addFolderItem(const QString &id, const QString &p
         depth = parentItem->data(FolderModel::RoleDepth).toInt() + 1;
 
         stdItem->setData(false, FolderModel::RoleIsVisible);
-        startRow = parentItem->row();
+        startRow = parentItem->row() + 1;
     } else {
         stdItem->setData(true, FolderModel::RoleIsVisible);
     }
@@ -271,14 +272,22 @@ QStandardItem *EwsFolderModel::addFolderItem(const QString &id, const QString &p
 
     for (int i = startRow; i < rowCount(); ++i) {
         QStandardItem *loopItem = item(i, 0);
-        if (loopItem->data(FolderModel::RoleDepth).toInt() == depth) {
+        int loopItemDepth = loopItem->data(FolderModel::RoleDepth).toInt();
+        if (loopItemDepth == depth) {
             QString displayName = loopItem->data(FolderModel::RoleDisplayName).toString();
             if (displayName.localeAwareCompare(title) > 0) {
+                qDebug() << Q_FUNC_INFO << title << i;
                 insertRow(i, stdItem);
                 return stdItem;
             }
+        } else if (loopItemDepth < depth){
+            // We hit the simbling of our parent
+            insertRow(i, stdItem);
+            return stdItem;
         }
     }
+
+    // if we can't find the right location just append it
     appendRow(stdItem);
 
     return stdItem;
