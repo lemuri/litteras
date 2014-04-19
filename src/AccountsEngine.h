@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QStandardItemModel>
 
+class MessagesIndex;
 class EwsEngine; //TODO create an abstract engine
 class AccountsEngine : public QObject
 {
@@ -33,6 +34,7 @@ class AccountsEngine : public QObject
 public:
     static AccountsEngine* instance();
     explicit AccountsEngine(QObject *parent = 0);
+    virtual ~AccountsEngine();
 
     QAbstractItemModel *accountsModel() const;
 
@@ -52,6 +54,8 @@ private:
     bool m_hadAccounts = false;
     QHash<QString, EwsEngine*> m_accounts;
     QStandardItemModel *m_accountsModel;
+    MessagesIndex *m_messagesIndex;
+    QThread *m_messagesIndexThread;
 };
 
 #endif // ACCOUNTSENGINE_H

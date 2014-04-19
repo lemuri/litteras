@@ -21,7 +21,9 @@
 
 #include "EwsEngine.h"
 #include "EwsFolderModel.h"
+#include "messagesindex.h"
 
+#include <QThread>
 #include <QDebug>
 
 Q_GLOBAL_STATIC(AccountsEngine, accountsEngine)
@@ -34,11 +36,26 @@ AccountsEngine *AccountsEngine::instance()
 AccountsEngine::AccountsEngine(QObject *parent)
     : QObject(parent)
     , m_accountsModel(new QStandardItemModel(this))
+    , m_messagesIndex(new MessagesIndex)
+    , m_messagesIndexThread(new QThread(this))
 {
+    connect(m_messagesIndexThread, &QThread::started, m_messagesIndex, &MessagesIndex::init);
+    m_messagesIndex->moveToThread(m_messagesIndexThread);
+    m_messagesIndexThread->start();
+
     QHash<int, QByteArray> roleNames;
     roleNames[Qt::UserRole] = "name";
     m_accountsModel->setItemRoleNames(roleNames);
+
     configFileChanged();
+}
+
+AccountsEngine::~AccountsEngine()
+{
+    if (m_messagesIndexThread) {
+        m_messagesIndexThread->quit();
+        m_messagesIndexThread->wait();
+    }
 }
 
 QAbstractItemModel *AccountsEngine::accountsModel() const
